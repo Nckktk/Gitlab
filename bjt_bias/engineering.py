@@ -9,10 +9,15 @@ from dataclasses import dataclass
 VCE_SAT = 0.2
 MAX_INPUT = 1e12
 FIELDS = ("vcc", "r1", "r2", "rc", "re", "beta", "vbe")
+RESISTOR_FIELDS = ("r1", "r2", "rc", "re")
+UNIT_OHM = "ohm"
+UNIT_KOHM = "kohm"
+UNIT_FACTORS = {UNIT_OHM: 1.0, UNIT_KOHM: 1e3}
 
 _NUMBER_ERROR = "ต้องเป็นตัวเลข"
 _POSITIVE_ERROR = "ต้องมากกว่าศูนย์"
 _TOO_LARGE_ERROR = "ค่ามากเกินไป"
+_UNIT_ERROR = "หน่วยไม่ถูกต้อง"
 
 
 @dataclass(frozen=True)
@@ -36,8 +41,15 @@ def parse_inputs(raw: dict[str, str]) -> tuple[BiasInputs | None, dict[str, str]
         if not text:
             errors[field] = _NUMBER_ERROR
             continue
+        factor = 1.0
+        if field in RESISTOR_FIELDS:
+            unit = (raw.get(f"{field}_unit") or UNIT_OHM).strip()
+            if unit not in UNIT_FACTORS:
+                errors[field] = _UNIT_ERROR
+                continue
+            factor = UNIT_FACTORS[unit]
         try:
-            value = float(text)
+            value = float(text) * factor
         except ValueError:
             errors[field] = _NUMBER_ERROR
             continue
@@ -51,7 +63,7 @@ def parse_inputs(raw: dict[str, str]) -> tuple[BiasInputs | None, dict[str, str]
 
     if "vcc" in values and values["vcc"] <= 0:
         errors["vcc"] = _POSITIVE_ERROR
-    for field in ("r1", "r2", "rc", "re"):
+    for field in RESISTOR_FIELDS:
         if field in values and values[field] <= 0:
             errors[field] = _POSITIVE_ERROR
     if "beta" in values and values["beta"] <= 0:

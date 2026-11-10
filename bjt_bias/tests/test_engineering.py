@@ -64,6 +64,30 @@ class TestParseInputs(unittest.TestCase):
         _, errors = parse_inputs({**VALID, "beta": "1e308"})
         self.assertIn("beta", errors)
 
+    def test_kohm_unit_scales_to_ohms(self):
+        inputs, errors = parse_inputs(
+            {**VALID, "r1": "100", "r2": "22", "rc": "2.2", "re": "1",
+             "r1_unit": "kohm", "r2_unit": "kohm", "rc_unit": "kohm", "re_unit": "kohm"}
+        )
+        self.assertEqual(errors, {})
+        self.assertEqual(
+            (inputs.r1, inputs.r2, inputs.rc, inputs.re),
+            (100000.0, 22000.0, 2200.0, 1000.0),
+        )
+
+    def test_missing_unit_keys_mean_ohms(self):
+        inputs, errors = parse_inputs(VALID)
+        self.assertEqual(errors, {})
+        self.assertEqual(inputs.r1, 10000.0)
+
+    def test_unknown_unit_is_rejected_per_field(self):
+        _, errors = parse_inputs({**VALID, "r1_unit": "mohm"})
+        self.assertEqual(errors.get("r1"), "หน่วยไม่ถูกต้อง")
+
+    def test_kohm_value_over_limit_is_rejected(self):
+        _, errors = parse_inputs({**VALID, "r1": "1e10", "r1_unit": "kohm"})
+        self.assertEqual(errors.get("r1"), "ค่ามากเกินไป")
+
 
 class TestThevenin(unittest.TestCase):
     def test_hand_worked_example(self):
