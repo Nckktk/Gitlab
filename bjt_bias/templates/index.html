@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BJT DC Bias — ENG29 2121</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<main>
+  <header>
+    <h1>BJT Common-Emitter DC Bias</h1>
+    <p class="subtitle">ENG29 2121 — voltage-divider bias</p>
+  </header>
+
+  <form method="post" action="/">
+    {% set fields = [
+      ("vcc", "VCC", "V"),
+      ("r1", "R1", "Ω"),
+      ("r2", "R2", "Ω"),
+      ("rc", "RC", "Ω"),
+      ("re", "RE", "Ω"),
+      ("beta", "β", ""),
+      ("vbe", "VBE", "V")
+    ] %}
+    <div class="grid">
+      {% for name, label, unit in fields %}
+      <div class="field">
+        <label for="{{ name }}">{{ label }}{% if unit %} ({{ unit }}){% endif %}</label>
+        <input id="{{ name }}" name="{{ name }}" value="{{ form.get(name, '') }}"
+               inputmode="decimal" autocomplete="off">
+        {% if errors.get(name) %}<p class="error">{{ errors[name] }}</p>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <button type="submit">คำนวณ DC Bias</button>
+  </form>
+
+  {% if result %}
+  <section class="results">
+    <h2>ผลลัพธ์</h2>
+    <table>
+      <tbody>
+        <tr><th>IB</th><td>{{ "%.6g"|format(result.ib) }} A</td></tr>
+        <tr><th>IC</th><td>{{ "%.6g"|format(result.ic) }} A</td></tr>
+        <tr><th>IE</th><td>{{ "%.6g"|format(result.ie) }} A</td></tr>
+        <tr><th>VB</th><td>{{ "%.6g"|format(result.vb) }} V</td></tr>
+        <tr><th>VE</th><td>{{ "%.6g"|format(result.ve) }} V</td></tr>
+        <tr><th>VC</th><td>{{ "%.6g"|format(result.vc) }} V</td></tr>
+        <tr><th>VCE</th><td>{{ "%.6g"|format(result.vce) }} V</td></tr>
+      </tbody>
+    </table>
+    <p class="region region-{{ result.region }}">{{ result.region|capitalize }}</p>
+    {% if result.warning %}<p class="warning">{{ result.warning }}</p>{% endif %}
+    <p class="check">ตรวจทานอิสระ: {{ "ผ่าน" if result.check_passed else "ไม่ผ่าน" }}
+      (ผลต่างสูงสุด {{ "%.2e"|format(result.check_max_rel_diff) }})</p>
+  </section>
+  {% endif %}
+</main>
+</body>
+</html>

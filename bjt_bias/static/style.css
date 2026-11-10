@@ -1,0 +1,118 @@
+:root {
+  --ink: #1f2933;
+  --muted: #616e7c;
+  --line: #d9e2ec;
+  --accent: #2563eb;
+  --warn-bg: #fff4e5;
+  --warn-ink: #8a4b00;
+  --error: #b42318;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 2rem 1rem;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: #f5f7fa;
+}
+
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1.5rem 1.75rem 2rem;
+}
+
+h1 { font-size: 1.35rem; margin: 0 0 0.25rem; }
+h2 { font-size: 1.05rem; margin: 1.75rem 0 0.5rem; }
+.subtitle { margin: 0 0 1.5rem; color: var(--muted); font-size: 0.9rem; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem 1.25rem;
+}
+
+.field label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 0.3rem;
+}
+
+.field input {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.field input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+button {
+  margin-top: 1.25rem;
+  width: 100%;
+  padding: 0.65rem;
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+th, td {
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--line);
+}
+
+td { text-align: right; }
+
+.region {
+  margin: 1rem 0 0.25rem;
+  font-weight: 600;
+}
+
+.region-active { color: #067647; }
+.region-saturation { color: var(--warn-ink); }
+.region-cutoff { color: var(--muted); }
+
+.warning {
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.error {
+  margin: 0.25rem 0 0;
+  color: var(--error);
+  font-size: 0.8rem;
+}
+
+.check {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0;
+}
+
+@media (max-width: 520px) {
+  .grid { grid-template-columns: 1fr; }
+}
