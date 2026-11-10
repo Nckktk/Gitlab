@@ -100,6 +100,12 @@ class TestLayout(unittest.TestCase):
     def setUp(self):
         self.client = create_app().test_client()
 
+    def test_post_without_unit_keys_computes_and_shows_ohms(self):
+        body = self.client.post("/", data=BASE).get_data(as_text=True)
+        self.assertIn("3.01746 mA", body)
+        self.assertIn('<option value="ohm" selected>', body)
+        self.assertEqual(body.count('<option value="ohm" selected>'), 4)
+
     def test_page_contains_circuit_schematic(self):
         body = self.client.get("/").get_data(as_text=True)
         self.assertIn("<svg", body)
@@ -124,7 +130,8 @@ class TestLayout(unittest.TestCase):
         body = self.client.post("/", data=data).get_data(as_text=True)
         self.assertIn("Cutoff", body)
         self.assertIn("region-cutoff", body)
-        self.assertIn("ผ่าน", body)
+        self.assertIn("ตรวจทานอิสระ: ผ่าน", body)
+        self.assertNotIn("ไม่ผ่าน", body)
 
     def test_section_headings_match_handout(self):
         body = self.client.get("/").get_data(as_text=True)

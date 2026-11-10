@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request
 
-from bjt_bias.engineering import analyze, parse_inputs
+from bjt_bias.engineering import RESISTOR_FIELDS, UNIT_OHM, analyze, parse_inputs
 
 
 def fmt_current(amps: float) -> str:
@@ -22,6 +22,19 @@ def fmt_voltage(volts: float) -> str:
     return f"{volts:.6g} V"
 
 
+def normalize_units(form: dict[str, str]) -> dict[str, str]:
+    """Make the unit actually used visible on the rendered form.
+
+    A submission without resistor unit keys is solved in ohms, so the form must
+    not fall back to its kΩ default and claim a unit the numbers did not use.
+    """
+    normalized = dict(form)
+    for field in RESISTOR_FIELDS:
+        if not (normalized.get(f"{field}_unit") or "").strip():
+            normalized[f"{field}_unit"] = UNIT_OHM
+    return normalized
+
+
 def create_app() -> Flask:
     app = Flask(__name__)
     app.add_template_filter(fmt_current, "current")
@@ -30,7 +43,7 @@ def create_app() -> Flask:
     @app.route("/", methods=["GET", "POST"])
     def index():
         if request.method == "POST":
-            form = request.form.to_dict()
+            form = normalize_units(request.form.to_dict())
             inputs, errors = parse_inputs(form)
             result = analyze(inputs) if inputs is not None else None
             return render_template(
