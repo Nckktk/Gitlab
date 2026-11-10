@@ -7,10 +7,12 @@ import math
 from dataclasses import dataclass
 
 VCE_SAT = 0.2
+MAX_INPUT = 1e12
 FIELDS = ("vcc", "r1", "r2", "rc", "re", "beta", "vbe")
 
 _NUMBER_ERROR = "ต้องเป็นตัวเลข"
 _POSITIVE_ERROR = "ต้องมากกว่าศูนย์"
+_TOO_LARGE_ERROR = "ค่ามากเกินไป"
 
 
 @dataclass(frozen=True)
@@ -41,6 +43,9 @@ def parse_inputs(raw: dict[str, str]) -> tuple[BiasInputs | None, dict[str, str]
             continue
         if not math.isfinite(value):
             errors[field] = _NUMBER_ERROR
+            continue
+        if abs(value) > MAX_INPUT:
+            errors[field] = _TOO_LARGE_ERROR
             continue
         values[field] = value
 

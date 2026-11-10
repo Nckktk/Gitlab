@@ -135,7 +135,7 @@ class TestThevenin(unittest.TestCase):
         self.assertTrue(math.isclose(r["ie"], 3.037573e-3, rel_tol=1e-5))
         self.assertTrue(math.isclose(r["ve"], 1.427659, rel_tol=1e-5))
         self.assertTrue(math.isclose(r["vc"], 8.982544, rel_tol=1e-5))
-        self.assertTrue(math.isclose(r["vce"], 7.554895, rel_tol=1e-5))
+        self.assertTrue(math.isclose(r["vce"], 7.554885, rel_tol=1e-5))
 
     def test_different_inputs_give_different_results(self):
         a = solve_thevenin(HAND)
@@ -220,7 +220,7 @@ class TestNodalAndCheck(unittest.TestCase):
         r = solve_nodal(HAND)
         self.assertTrue(math.isclose(r["ve"], 1.427659, rel_tol=1e-5))
         self.assertTrue(math.isclose(r["ic"], 3.017456e-3, rel_tol=1e-5))
-        self.assertTrue(math.isclose(r["vce"], 7.554895, rel_tol=1e-5))
+        self.assertTrue(math.isclose(r["vce"], 7.554885, rel_tol=1e-5))
         self.assertTrue(math.isclose(r["vb"], r["ve"] + 0.7, rel_tol=1e-9))
 
     def test_methods_agree_on_three_inputs(self):

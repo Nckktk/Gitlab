@@ -57,3 +57,10 @@ class TestAppValidation(TestApp):
         body = resp.get_data(as_text=True)
         self.assertIn("Saturation", body)
         self.assertIn("ไม่ทำงานใน active region", body)
+
+    def test_huge_value_rejected_not_nan(self):
+        resp = self.client.post("/", data={**BASE, "beta": "1e308"})
+        body = resp.get_data(as_text=True)
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("มากเกินไป", body)
+        self.assertNotIn("nan", body)

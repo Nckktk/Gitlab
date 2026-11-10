@@ -60,6 +60,10 @@ class TestParseInputs(unittest.TestCase):
                 _, errors = parse_inputs({**VALID, "vcc": bad})
                 self.assertIn("vcc", errors)
 
+    def test_rejects_absurdly_large_value(self):
+        _, errors = parse_inputs({**VALID, "beta": "1e308"})
+        self.assertIn("beta", errors)
+
 
 class TestThevenin(unittest.TestCase):
     def test_hand_worked_example(self):
