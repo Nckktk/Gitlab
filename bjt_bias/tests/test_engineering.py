@@ -1,7 +1,13 @@
 import math
 import unittest
 
-from bjt_bias.engineering import BiasInputs, parse_inputs, solve_thevenin
+from bjt_bias.engineering import (
+    BiasInputs,
+    cross_check,
+    parse_inputs,
+    solve_nodal,
+    solve_thevenin,
+)
 
 VALID = {"vcc": "12", "r1": "10000", "r2": "2200", "rc": "1000",
          "re": "470", "beta": "150", "vbe": "0.7"}
@@ -70,6 +76,39 @@ class TestThevenin(unittest.TestCase):
         b = solve_thevenin(BiasInputs(vcc=9, r1=47000, r2=10000,
                                       rc=2200, re=1000, beta=100, vbe=0.7))
         self.assertNotAlmostEqual(a["ic"], b["ic"])
+
+
+class TestNodalAndCheck(unittest.TestCase):
+    def test_nodal_matches_hand_example(self):
+        r = solve_nodal(HAND)
+        self.assertTrue(math.isclose(r["ve"], 1.427659, rel_tol=1e-5))
+        self.assertTrue(math.isclose(r["ic"], 3.017456e-3, rel_tol=1e-5))
+        self.assertTrue(math.isclose(r["vce"], 7.554885, rel_tol=1e-5))
+        self.assertTrue(math.isclose(r["vb"], r["ve"] + 0.7, rel_tol=1e-9))
+
+    def test_methods_agree_on_three_inputs(self):
+        cases = [
+            HAND,
+            BiasInputs(vcc=9, r1=47000, r2=10000, rc=2200, re=1000, beta=100, vbe=0.7),
+            BiasInputs(vcc=5, r1=3300, r2=680, rc=470, re=100, beta=300, vbe=0.65),
+        ]
+        for case in cases:
+            with self.subTest(case=case):
+                passed, diff = cross_check(solve_thevenin(case), solve_nodal(case))
+                self.assertTrue(passed)
+                self.assertLessEqual(diff, 1e-9)
+
+    def test_check_detects_deliberate_mismatch(self):
+        raw = solve_thevenin(HAND)
+        perturbed = dict(raw, ic=raw["ic"] * 1.001)
+        passed, diff = cross_check(raw, perturbed)
+        self.assertFalse(passed)
+        self.assertGreater(diff, 1e-6)
+
+    def test_check_handles_zero_together(self):
+        a = {"ic": 0.0, "vce": 0.0}
+        b = {"ic": 0.0, "vce": 0.0}
+        self.assertEqual(cross_check(a, b), (True, 0.0))
 
 
 if __name__ == "__main__":
