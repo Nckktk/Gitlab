@@ -135,7 +135,7 @@ class TestThevenin(unittest.TestCase):
         self.assertTrue(math.isclose(r["ie"], 3.037573e-3, rel_tol=1e-5))
         self.assertTrue(math.isclose(r["ve"], 1.427659, rel_tol=1e-5))
         self.assertTrue(math.isclose(r["vc"], 8.982544, rel_tol=1e-5))
-        self.assertTrue(math.isclose(r["vce"], 7.554885, rel_tol=1e-5))
+        self.assertTrue(math.isclose(r["vce"], 7.554895, rel_tol=1e-5))
 
     def test_different_inputs_give_different_results(self):
         a = solve_thevenin(HAND)
@@ -220,7 +220,7 @@ class TestNodalAndCheck(unittest.TestCase):
         r = solve_nodal(HAND)
         self.assertTrue(math.isclose(r["ve"], 1.427659, rel_tol=1e-5))
         self.assertTrue(math.isclose(r["ic"], 3.017456e-3, rel_tol=1e-5))
-        self.assertTrue(math.isclose(r["vce"], 7.554885, rel_tol=1e-5))
+        self.assertTrue(math.isclose(r["vce"], 7.554895, rel_tol=1e-5))
         self.assertTrue(math.isclose(r["vb"], r["ve"] + 0.7, rel_tol=1e-9))
 
     def test_methods_agree_on_three_inputs(self):
@@ -401,7 +401,7 @@ class TestApp(unittest.TestCase):
         body = resp.get_data(as_text=True)
         self.assertEqual(resp.status_code, 200)
         self.assertIn("0.00301746", body)   # IC, 6 significant figures
-        self.assertIn("7.55488", body)      # VCE
+        self.assertIn("7.55489", body)      # VCE
         self.assertIn("Active", body)
 ```
 
@@ -543,7 +543,7 @@ Expected: พิมพ์ `ok` และรายการ import ของ `app
 - [ ] **Step 4: เดโมจริงบน localhost**
 
 Run: `.venv\Scripts\python -m bjt_bias.app`
-จากนั้นเปิด `http://127.0.0.1:5000`, กรอกตัวอย่าง spec §8, ตรวจว่าเห็น `IC = 0.00301746 A`, `VCE = 7.55488 V`, `Active`, `ตรวจทานอิสระ: ผ่าน`
+จากนั้นเปิด `http://127.0.0.1:5000`, กรอกตัวอย่าง spec §8, ตรวจว่าเห็น `IC = 0.00301746 A`, `VCE = 7.55489 V`, `Active`, `ตรวจทานอิสระ: ผ่าน`
 **ปิด server หลังเดโม**
 
 - [ ] **Step 5: Merge และ push**

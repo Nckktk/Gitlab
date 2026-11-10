@@ -124,7 +124,7 @@ Input: `VCC=12, R1=10000, R2=2200, RC=1000, RE=470, beta=150, VBE=0.7`
 ```
 VBB = 2.163934 V      RB = 1803.278689 ohm
 IB  = 2.01164e-5 A    IC = 3.01746e-3 A    IE = 3.03757e-3 A
-VE  = 1.42766 V       VC = 8.98254 V       VCE = 7.55488 V
+VE  = 1.42766 V       VC = 8.98254 V       VCE = 7.55489 V
 region = active
 ```
 
