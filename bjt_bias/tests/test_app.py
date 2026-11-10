@@ -94,3 +94,42 @@ class TestAppValidation(TestApp):
         self.assertEqual(resp.status_code, 200)
         self.assertIn("มากเกินไป", body)
         self.assertNotIn("nan", body)
+
+
+class TestLayout(unittest.TestCase):
+    def setUp(self):
+        self.client = create_app().test_client()
+
+    def test_page_contains_circuit_schematic(self):
+        body = self.client.get("/").get_data(as_text=True)
+        self.assertIn("<svg", body)
+        self.assertIn('class="schematic"', body)
+        for label in ("VCC", "R1", "R2", "RC", "RE", "Q1", "GND"):
+            with self.subTest(label=label):
+                self.assertIn(f">{label}<", body)
+
+    def test_unit_selects_default_to_kilo_ohms(self):
+        body = self.client.get("/").get_data(as_text=True)
+        for field in ("r1", "r2", "rc", "re"):
+            self.assertIn(f'name="{field}_unit"', body)
+        self.assertEqual(body.count('<option value="kohm" selected>'), 4)
+
+    def test_unit_selection_is_preserved_after_submit(self):
+        data = {**HANDOUT, "r1_unit": "ohm", "r1": "10000"}
+        body = self.client.post("/", data=data).get_data(as_text=True)
+        self.assertIn('<option value="ohm" selected>', body)
+
+    def test_cutoff_badge_and_zero_currents(self):
+        data = {**HANDOUT, "r2": "1", "r2_unit": "kohm"}
+        body = self.client.post("/", data=data).get_data(as_text=True)
+        self.assertIn("Cutoff", body)
+        self.assertIn("region-cutoff", body)
+        self.assertIn("ผ่าน", body)
+
+    def test_section_headings_match_handout(self):
+        body = self.client.get("/").get_data(as_text=True)
+        self.assertIn("Input Parameters", body)
+        body = self.client.post("/", data=HANDOUT).get_data(as_text=True)
+        for heading in ("DC Bias Results", "Operating Region"):
+            with self.subTest(heading=heading):
+                self.assertIn(heading, body)

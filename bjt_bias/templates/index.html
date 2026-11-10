@@ -7,51 +7,126 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-<main>
-  <header>
-    <h1>BJT Common-Emitter DC Bias</h1>
-    <p class="subtitle">ENG29 2121 — voltage-divider bias</p>
+<main class="page">
+  <header class="masthead">
+    <div>
+      <h1>BJT DC Bias Calculator</h1>
+      <p class="subtitle">Common-Emitter · Voltage-Divider Bias</p>
+    </div>
+    <p class="course">ENG29 2121 · Lab 2</p>
   </header>
 
-  <form method="post" action="/">
-    {% set fields = [
-      ("vcc", "VCC", "V"),
-      ("r1", "R1", "Ω"),
-      ("r2", "R2", "Ω"),
-      ("rc", "RC", "Ω"),
-      ("re", "RE", "Ω"),
-      ("beta", "β", ""),
-      ("vbe", "VBE", "V")
-    ] %}
-    <div class="grid">
-      {% for name, label, unit in fields %}
-      <div class="field">
-        <label for="{{ name }}">{{ label }}{% if unit %} ({{ unit }}){% endif %}</label>
-        <input id="{{ name }}" name="{{ name }}" value="{{ form.get(name, '') }}"
-               inputmode="decimal" autocomplete="off">
-        {% if errors.get(name) %}<p class="error">{{ errors[name] }}</p>{% endif %}
-      </div>
-      {% endfor %}
-    </div>
-    <button type="submit">คำนวณ DC Bias</button>
-  </form>
+  <div class="layout">
+    <section class="card">
+      <h2>Input Parameters</h2>
+      <form method="post" action="/">
+        {% set fields = [
+          ("vcc", "VCC", "V"),
+          ("r1", "R1", "resistor"),
+          ("r2", "R2", "resistor"),
+          ("rc", "RC", "resistor"),
+          ("re", "RE", "resistor"),
+          ("beta", "β", "β"),
+          ("vbe", "VBE", "V")
+        ] %}
+        <div class="fields">
+          {% for name, label, kind in fields %}
+          <div class="field">
+            <label for="{{ name }}">{{ label }}</label>
+            <div class="control">
+              <input id="{{ name }}" name="{{ name }}" value="{{ form.get(name, '') }}"
+                     inputmode="decimal" autocomplete="off">
+              {% if kind == "resistor" %}
+              {% set unit = form.get(name ~ "_unit") or "kohm" %}
+              <select id="{{ name }}_unit" name="{{ name }}_unit" aria-label="หน่วยของ {{ label }}">
+                <option value="ohm"{% if unit == "ohm" %} selected{% endif %}>Ω</option>
+                <option value="kohm"{% if unit != "ohm" %} selected{% endif %}>kΩ</option>
+              </select>
+              {% else %}
+              <span class="unit">{{ kind }}</span>
+              {% endif %}
+            </div>
+            {% if errors.get(name) %}<p class="error">{{ errors[name] }}</p>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        <button type="submit">คำนวณ DC Bias</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Circuit</h2>
+      <svg class="schematic" viewBox="0 0 380 320" role="img"
+           aria-labelledby="schematic-title">
+        <title id="schematic-title">วงจร BJT NPN common-emitter แบบ voltage-divider bias:
+          R1 จาก VCC ไปเบส, R2 จากเบสลงกราวด์, RC จาก VCC ไปคอลเลกเตอร์,
+          RE จากอิมิตเตอร์ลงกราวด์</title>
+        <g class="wire">
+          <path d="M70 40 H300"/>
+          <path d="M120 40 V75 M120 115 V150 M120 150 V175 M120 215 V265"/>
+          <path d="M250 40 V60 M250 100 V110 M250 190 V205 M250 245 V265"/>
+          <path d="M120 150 H180"/>
+          <path d="M180 140 L216 124 L250 110"/>
+          <path d="M180 160 L216 176 L250 190"/>
+        </g>
+        <g class="component">
+          <rect x="112" y="75" width="16" height="40"/>
+          <rect x="112" y="175" width="16" height="40"/>
+          <rect x="242" y="60" width="16" height="40"/>
+          <rect x="242" y="205" width="16" height="40"/>
+          <circle cx="196" cy="150" r="26"/>
+          <path d="M182 132 V168"/>
+        </g>
+        <path class="arrow" d="M203 167 L213 174 L200 175 Z"/>
+        <g class="node">
+          <circle cx="120" cy="150" r="3.5"/>
+          <circle cx="250" cy="110" r="3.5"/>
+        </g>
+        <g class="ground">
+          <path d="M110 265 H130 M113 271 H127 M116 277 H124"/>
+          <path d="M240 265 H260 M243 271 H257 M246 277 H254"/>
+        </g>
+        <g class="labels">
+          <text x="250" y="26" text-anchor="middle">VCC</text>
+          <text x="102" y="99" text-anchor="end">R1</text>
+          <text x="102" y="199" text-anchor="end">R2</text>
+          <text x="268" y="84">RC</text>
+          <text x="268" y="229">RE</text>
+          <text x="196" y="196" text-anchor="middle">Q1</text>
+          <text x="120" y="296" text-anchor="middle">GND</text>
+          <text x="250" y="296" text-anchor="middle">GND</text>
+        </g>
+      </svg>
+      <p class="hint">แผนผังแสดงโครงสร้างวงจรเท่านั้น ไม่ได้วาดตามสัดส่วนจริง</p>
+    </section>
+  </div>
 
   {% if result %}
-  <section class="results">
-    <h2>ผลลัพธ์</h2>
-    <table>
-      <tbody>
-        <tr><th>IB</th><td>{{ result.ib|current }}</td></tr>
-        <tr><th>IC</th><td>{{ result.ic|current }}</td></tr>
-        <tr><th>IE</th><td>{{ result.ie|current }}</td></tr>
-        <tr><th>VB</th><td>{{ result.vb|voltage }}</td></tr>
-        <tr><th>VE</th><td>{{ result.ve|voltage }}</td></tr>
-        <tr><th>VC</th><td>{{ result.vc|voltage }}</td></tr>
-        <tr><th>VCE</th><td>{{ result.vce|voltage }}</td></tr>
-      </tbody>
-    </table>
-    <p class="region region-{{ result.region }}">{{ result.region|capitalize }}</p>
+  {% set region_thai = {
+    "active": "ไบแอสอยู่ในช่วง Forward-Active — แบบจำลอง β คงที่ใช้ได้",
+    "saturation": "VCE ≤ 0.2 V — อยู่นอก active region ค่าที่แสดงมาจากสมการเชิงเส้น",
+    "cutoff": "IB ≤ 0 — ไม่มีกระแสไหลในวงจร"
+  } %}
+  <section class="card results" id="results">
+    <div class="results-head">
+      <h2>DC Bias Results</h2>
+      <span class="badge region-{{ result.region }}">{{ result.region|capitalize }}</span>
+    </div>
+
+    <dl class="readings">
+      <div><dt>VB</dt><dd>{{ result.vb|voltage }}</dd></div>
+      <div><dt>VE</dt><dd>{{ result.ve|voltage }}</dd></div>
+      <div><dt>VC</dt><dd>{{ result.vc|voltage }}</dd></div>
+      <div><dt>VCE</dt><dd>{{ result.vce|voltage }}</dd></div>
+      <div><dt>IC</dt><dd>{{ result.ic|current }}</dd></div>
+      <div><dt>IE</dt><dd>{{ result.ie|current }}</dd></div>
+      <div><dt>IB</dt><dd>{{ result.ib|current }}</dd></div>
+    </dl>
+
+    <h3 class="region-heading">Operating Region</h3>
+    <p class="region-note">{{ region_thai.get(result.region, "") }}</p>
     {% if result.warning %}<p class="warning">{{ result.warning }}</p>{% endif %}
+
     <p class="check">ตรวจทานอิสระ: {{ "ผ่าน" if result.check_passed else "ไม่ผ่าน" }}
       (ผลต่างสูงสุด {{ "%.2e"|format(result.check_max_rel_diff) }})</p>
   </section>
