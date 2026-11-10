@@ -1,6 +1,10 @@
 import unittest
 
-from bjt_bias.app import create_app
+from bjt_bias.app import create_app, fmt_current, fmt_voltage
+
+HANDOUT = {"vcc": "12", "r1": "100", "r2": "22", "rc": "2.2", "re": "1",
+           "r1_unit": "kohm", "r2_unit": "kohm", "rc_unit": "kohm", "re_unit": "kohm",
+           "beta": "100", "vbe": "0.7"}
 
 
 class TestApp(unittest.TestCase):
@@ -19,9 +23,35 @@ class TestApp(unittest.TestCase):
         })
         body = resp.get_data(as_text=True)
         self.assertEqual(resp.status_code, 200)
-        self.assertIn("0.00301746", body)   # IC, 6 significant figures
-        self.assertIn("7.55489", body)      # VCE
+        self.assertIn("3.01746 mA", body)   # IC, 6 significant figures
+        self.assertIn("7.55489 V", body)    # VCE
         self.assertIn("Active", body)
+
+
+class TestFormatting(unittest.TestCase):
+    def setUp(self):
+        self.client = create_app().test_client()
+
+    def test_current_units(self):
+        self.assertEqual(fmt_current(1.5), "1.5 A")
+        self.assertEqual(fmt_current(0.00122986), "1.22986 mA")
+        self.assertEqual(fmt_current(1.22986e-05), "12.2986 µA")
+        self.assertEqual(fmt_current(1.2345e-08), "12.345 nA")
+        self.assertEqual(fmt_current(0.0), "0 A")
+
+    def test_voltage_six_significant_figures(self):
+        self.assertEqual(fmt_voltage(8.0521605), "8.05216 V")
+
+    def test_handout_sample_renders_in_milliamps(self):
+        body = self.client.post("/", data=HANDOUT).get_data(as_text=True)
+        self.assertIn("1.22986 mA", body)
+        self.assertIn("12.2986 µA", body)
+        self.assertIn("8.05216 V", body)
+
+    def test_cutoff_currents_render_as_zero(self):
+        data = {**HANDOUT, "r2": "1", "r2_unit": "kohm"}
+        body = self.client.post("/", data=data).get_data(as_text=True)
+        self.assertIn("0 A", body)
 
 
 BASE = {"vcc": "12", "r1": "10000", "r2": "2200", "rc": "1000",

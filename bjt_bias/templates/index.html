@@ -41,13 +41,13 @@
     <h2>ผลลัพธ์</h2>
     <table>
       <tbody>
-        <tr><th>IB</th><td>{{ "%.6g"|format(result.ib) }} A</td></tr>
-        <tr><th>IC</th><td>{{ "%.6g"|format(result.ic) }} A</td></tr>
-        <tr><th>IE</th><td>{{ "%.6g"|format(result.ie) }} A</td></tr>
-        <tr><th>VB</th><td>{{ "%.6g"|format(result.vb) }} V</td></tr>
-        <tr><th>VE</th><td>{{ "%.6g"|format(result.ve) }} V</td></tr>
-        <tr><th>VC</th><td>{{ "%.6g"|format(result.vc) }} V</td></tr>
-        <tr><th>VCE</th><td>{{ "%.6g"|format(result.vce) }} V</td></tr>
+        <tr><th>IB</th><td>{{ result.ib|current }}</td></tr>
+        <tr><th>IC</th><td>{{ result.ic|current }}</td></tr>
+        <tr><th>IE</th><td>{{ result.ie|current }}</td></tr>
+        <tr><th>VB</th><td>{{ result.vb|voltage }}</td></tr>
+        <tr><th>VE</th><td>{{ result.ve|voltage }}</td></tr>
+        <tr><th>VC</th><td>{{ result.vc|voltage }}</td></tr>
+        <tr><th>VCE</th><td>{{ result.vce|voltage }}</td></tr>
       </tbody>
     </table>
     <p class="region region-{{ result.region }}">{{ result.region|capitalize }}</p>
