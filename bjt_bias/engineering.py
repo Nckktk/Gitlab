@@ -123,3 +123,74 @@ def cross_check(
     """Compare the two independent solvers on IC and VCE."""
     diff = max(_rel_diff(a["ic"], b["ic"]), _rel_diff(a["vce"], b["vce"]))
     return (diff <= REL_TOL, diff)
+
+
+@dataclass(frozen=True)
+class BiasResult:
+    inputs: BiasInputs
+    vbb: float
+    rb: float
+    ib: float
+    ic: float
+    ie: float
+    vb: float
+    ve: float
+    vc: float
+    vce: float
+    region: str
+    warning: str | None
+    check_passed: bool
+    check_max_rel_diff: float
+
+
+def analyze(i: BiasInputs) -> BiasResult:
+    """Cross-check the raw solutions, then classify the region.
+
+    The cross-check always compares the raw solver outputs, before the
+    cutoff boundary condition rewrites what is reported.
+    """
+    thevenin = solve_thevenin(i)
+    nodal = solve_nodal(i)
+    passed, diff = cross_check(thevenin, nodal)
+
+    common = dict(
+        inputs=i,
+        vbb=thevenin["vbb"],
+        rb=thevenin["rb"],
+        check_passed=passed,
+        check_max_rel_diff=diff,
+    )
+
+    if thevenin["ib"] <= 0:
+        return BiasResult(
+            **common,
+            ib=0.0,
+            ic=0.0,
+            ie=0.0,
+            vb=thevenin["vbb"],
+            ve=0.0,
+            vc=i.vcc,
+            vce=i.vcc,
+            region="cutoff",
+            warning="Cutoff — ไม่มีกระแสไหลในวงจร (IB ≤ 0)",
+        )
+
+    if thevenin["vce"] <= VCE_SAT:
+        region = "saturation"
+        warning = "Saturation — ทรานซิสเตอร์ไม่ทำงานใน active region (VCE ≤ 0.2 V)"
+    else:
+        region = "active"
+        warning = None
+
+    return BiasResult(
+        **common,
+        ib=thevenin["ib"],
+        ic=thevenin["ic"],
+        ie=thevenin["ie"],
+        vb=thevenin["vb"],
+        ve=thevenin["ve"],
+        vc=thevenin["vc"],
+        vce=thevenin["vce"],
+        region=region,
+        warning=warning,
+    )
