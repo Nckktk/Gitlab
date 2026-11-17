@@ -10,3 +10,34 @@ python electrical.py
 ```
 
 กรอกแรงดันไฟฟ้า (V) และความต้านทาน (ohm) เมื่อโปรแกรมถาม จากนั้นโปรแกรมจะแสดงกระแสไฟฟ้า (A) และกำลังไฟฟ้า (W) โดยความต้านทานต้องมากกว่าศูนย์
+
+---
+
+## Lab 3 — BJT DC Bias Web App (ต่อจาก Lab 2)
+
+เว็บ Flask อยู่ในโฟลเดอร์ `bjt_bias/` และรันได้ 3 วงจรไบอัสจากหน้าเดียว:
+`Voltage Divider Bias` (ผลเหมือน Lab 2 ทุกประการ), `Fixed Bias` และ
+`Emitter Bias แบบแหล่งจ่ายเดียว`
+
+### วิธีรัน
+
+```powershell
+.venv\Scripts\python.exe -m bjt_bias.app
+```
+
+เปิด `http://127.0.0.1:5000` เลือกโหมดในช่อง `วงจรไบอัส` แล้วกด
+**เปลี่ยนโหมด** เพื่อโหลดฟอร์มของวงจรนั้น (ไม่ต้องใช้ JavaScript) จากนั้นกรอกค่าแล้วกด
+**คำนวณ DC Bias**
+
+```powershell
+.venv\Scripts\python.exe -m pytest bjt_bias\tests -q
+```
+
+### หน่วยและค่าอ้างอิง
+
+VCC/VBE เป็น V, β ไม่มีหน่วย, ตัวต้านทานทุกตัว (R1, R2, RB, RC, RE) เลือก Ω หรือ kΩ
+แล้วแปลงเป็น Ω ครั้งเดียวตอนรับข้อมูล ผลแสดง VB/VE/VC/VCE เป็น V และกระแสเป็น
+A/mA/µA ตามขนาด (6 significant figures)
+
+กรณีทดสอบ A1–A5, ค่าคาดหมายอิสระ และสถานะการตรวจผ่าน Browser อยู่ใน
+`docs/validation.md` ส่วนตัวอย่างคำสั่งตั้งค่า Playwright MCP อยู่ใน `opencode.json`
