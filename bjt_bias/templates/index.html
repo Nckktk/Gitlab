@@ -39,10 +39,11 @@
               <input id="{{ name }}" name="{{ name }}" value="{{ form.get(name, '') }}"
                      inputmode="decimal" autocomplete="off">
               {% if kind == "resistor" %}
-              {% set unit = form.get(name ~ "_unit") or "kohm" %}
+              {% set unit = form.get(name ~ "_unit") or default_resistor_unit %}
               <select id="{{ name }}_unit" name="{{ name }}_unit" aria-label="หน่วยของ {{ label }}">
-                <option value="ohm"{% if unit == "ohm" %} selected{% endif %}>Ω</option>
-                <option value="kohm"{% if unit != "ohm" %} selected{% endif %}>kΩ</option>
+                {% for value, label in resistor_units %}
+                <option value="{{ value }}"{% if unit == value %} selected{% endif %}>{{ label }}</option>
+                {% endfor %}
               </select>
               {% else %}
               <span class="unit">{{ kind }}</span>

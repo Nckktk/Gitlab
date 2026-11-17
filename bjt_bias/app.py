@@ -6,6 +6,8 @@ from bjt_bias.engineering import (
     MODE_EMITTER,
     MODE_FIXED,
     MODES,
+    RESISTOR_UNITS,
+    UNIT_KOHM,
     UNIT_OHM,
     analyze_mode,
 )
@@ -105,6 +107,8 @@ def create_app() -> Flask:
             modes=MODES,
             mode_labels=MODE_LABELS,
             fields=MODE_FIELDS_META.get(mode, MODE_FIELDS_META[MODE_DIVIDER]),
+            resistor_units=RESISTOR_UNITS,
+            default_resistor_unit=UNIT_KOHM,
         )
 
     return app

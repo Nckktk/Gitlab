@@ -13,7 +13,13 @@ RESISTOR_FIELDS = ("r1", "r2", "rc", "re")
 ALL_RESISTOR_FIELDS = ("r1", "r2", "rb", "rc", "re")
 UNIT_OHM = "ohm"
 UNIT_KOHM = "kohm"
-UNIT_FACTORS = {UNIT_OHM: 1.0, UNIT_KOHM: 1e3}
+UNIT_MOHM = "megaohm"
+UNIT_FACTORS = {UNIT_OHM: 1.0, UNIT_KOHM: 1e3, UNIT_MOHM: 1e6}
+RESISTOR_UNITS = (
+    (UNIT_OHM, "Ω"),
+    (UNIT_KOHM, "kΩ"),
+    (UNIT_MOHM, "MΩ"),
+)
 
 MODE_DIVIDER = "divider"
 MODE_FIXED = "fixed"
