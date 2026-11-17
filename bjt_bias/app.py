@@ -1,6 +1,47 @@
 from flask import Flask, render_template, request
 
-from bjt_bias.engineering import RESISTOR_FIELDS, UNIT_OHM, analyze, parse_inputs
+from bjt_bias.engineering import (
+    ALL_RESISTOR_FIELDS,
+    MODE_DIVIDER,
+    MODE_EMITTER,
+    MODE_FIXED,
+    MODES,
+    UNIT_OHM,
+    analyze_mode,
+)
+
+MODE_LABELS = {
+    MODE_DIVIDER: "Voltage Divider Bias",
+    MODE_FIXED: "Fixed Bias",
+    MODE_EMITTER: "Emitter Bias",
+}
+
+MODE_FIELDS_META = {
+    MODE_DIVIDER: [
+        ("vcc", "VCC", "V"),
+        ("r1", "R1", "resistor"),
+        ("r2", "R2", "resistor"),
+        ("rc", "RC", "resistor"),
+        ("re", "RE", "resistor"),
+        ("beta", "β", "β"),
+        ("vbe", "VBE", "V"),
+    ],
+    MODE_FIXED: [
+        ("vcc", "VCC", "V"),
+        ("rb", "RB", "resistor"),
+        ("rc", "RC", "resistor"),
+        ("beta", "β", "β"),
+        ("vbe", "VBE", "V"),
+    ],
+    MODE_EMITTER: [
+        ("vcc", "VCC", "V"),
+        ("rb", "RB", "resistor"),
+        ("rc", "RC", "resistor"),
+        ("re", "RE", "resistor"),
+        ("beta", "β", "β"),
+        ("vbe", "VBE", "V"),
+    ],
+}
 
 
 def fmt_current(amps: float) -> str:
@@ -29,7 +70,7 @@ def normalize_units(form: dict[str, str]) -> dict[str, str]:
     not fall back to its kΩ default and claim a unit the numbers did not use.
     """
     normalized = dict(form)
-    for field in RESISTOR_FIELDS:
+    for field in ALL_RESISTOR_FIELDS:
         if not (normalized.get(f"{field}_unit") or "").strip():
             normalized[f"{field}_unit"] = UNIT_OHM
     return normalized
@@ -44,12 +85,27 @@ def create_app() -> Flask:
     def index():
         if request.method == "POST":
             form = normalize_units(request.form.to_dict())
-            inputs, errors = parse_inputs(form)
-            result = analyze(inputs) if inputs is not None else None
-            return render_template(
-                "index.html", form=form, errors=errors, result=result
-            )
-        return render_template("index.html", form={}, errors={}, result=None)
+            mode = (form.get("mode") or MODE_DIVIDER).strip()
+            if form.get("change_mode"):
+                result, errors = None, {}
+            else:
+                result, errors = analyze_mode(mode, form)
+        else:
+            form = {}
+            mode = MODE_DIVIDER
+            result, errors = None, {}
+
+        return render_template(
+            "index.html",
+            form=form,
+            errors=errors,
+            result=result,
+            mode=mode,
+            mode_label=MODE_LABELS.get(mode, mode),
+            modes=MODES,
+            mode_labels=MODE_LABELS,
+            fields=MODE_FIELDS_META.get(mode, MODE_FIELDS_META[MODE_DIVIDER]),
+        )
 
     return app
 

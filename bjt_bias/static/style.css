@@ -166,6 +166,41 @@ button {
 
 button:hover { background: var(--blue); }
 
+.mode-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding-bottom: 0.85rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.mode-bar label {
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: var(--muted);
+}
+
+.mode-bar select {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+
+.mode-bar button {
+  margin-top: 0;
+  width: auto;
+  padding: 0.4rem 0.8rem;
+  background: var(--blue);
+  font-size: 0.85rem;
+}
+
+.mode-bar button:hover { background: var(--navy); }
+
 .schematic {
   display: block;
   width: 100%;
@@ -229,6 +264,7 @@ button:hover { background: var(--blue); }
 .region-active { color: var(--green); background: var(--green-bg); }
 .region-saturation { color: var(--amber); background: var(--amber-bg); }
 .region-cutoff { color: var(--muted); background: #eef2f6; }
+.region-model-limit { color: var(--amber); background: var(--amber-bg); }
 
 .readings {
   display: grid;

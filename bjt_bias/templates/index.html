@@ -11,24 +11,26 @@
   <header class="masthead">
     <div>
       <h1>BJT DC Bias Calculator</h1>
-      <p class="subtitle">Common-Emitter · Voltage-Divider Bias</p>
+      <p class="subtitle">Common-Emitter · เลือกวงจรไบอัสได้ 3 แบบ</p>
     </div>
-    <p class="course">ENG29 2121 · Lab 2</p>
+    <p class="course">ENG29 2121 · Lab 3</p>
   </header>
 
   <div class="layout">
     <section class="card">
       <h2>Input Parameters</h2>
       <form method="post" action="/">
-        {% set fields = [
-          ("vcc", "VCC", "V"),
-          ("r1", "R1", "resistor"),
-          ("r2", "R2", "resistor"),
-          ("rc", "RC", "resistor"),
-          ("re", "RE", "resistor"),
-          ("beta", "β", "β"),
-          ("vbe", "VBE", "V")
-        ] %}
+        <div class="mode-bar">
+          <label for="mode">วงจรไบอัส</label>
+          <select id="mode" name="mode">
+            {% for key in modes %}
+            <option value="{{ key }}"{% if mode == key %} selected{% endif %}>{{ mode_labels[key] }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" name="change_mode" value="1" class="secondary">เปลี่ยนโหมด</button>
+        </div>
+        {% if errors.get("mode") %}<p class="error">{{ errors["mode"] }}</p>{% endif %}
+
         <div class="fields">
           {% for name, label, kind in fields %}
           <div class="field">
@@ -55,7 +57,62 @@
     </section>
 
     <section class="card">
-      <h2>Circuit</h2>
+      <h2>Circuit · {{ mode_label }}</h2>
+      {% if mode == "fixed" %}
+      <svg class="schematic" viewBox="0 0 380 320" role="img" aria-labelledby="schematic-fixed">
+        <title id="schematic-fixed">วงจร BJT NPN common-emitter แบบ fixed bias: RB จาก VCC ไปเบส อิมิตเตอร์ต่อกราวด์โดยตรง และ RC จาก VCC ไปคอลเลกเตอร์</title>
+        <g class="wire">
+          <path d="M70 40 H300"/>
+          <path d="M120 40 V75 M120 115 V150"/>
+          <path d="M250 40 V60 M250 100 V110 M250 190 V265"/>
+          <path d="M120 150 H180 M180 140 L216 124 L250 110 M180 160 L216 176 L250 190"/>
+        </g>
+        <g class="component">
+          <rect x="112" y="75" width="16" height="40"/>
+          <rect x="242" y="60" width="16" height="40"/>
+          <circle cx="196" cy="150" r="26"/>
+          <path d="M182 132 V168"/>
+        </g>
+        <path class="arrow" d="M203 167 L213 174 L200 175 Z"/>
+        <g class="node"><circle cx="120" cy="150" r="3.5"/><circle cx="250" cy="110" r="3.5"/></g>
+        <g class="ground"><path d="M240 265 H260 M243 271 H257 M246 277 H254"/></g>
+        <g class="labels">
+          <text x="250" y="26" text-anchor="middle">VCC</text>
+          <text x="102" y="99" text-anchor="end">RB</text>
+          <text x="268" y="84">RC</text>
+          <text x="196" y="196" text-anchor="middle">Q1</text>
+          <text x="250" y="296" text-anchor="middle">GND</text>
+        </g>
+      </svg>
+      {% elif mode == "emitter" %}
+      <svg class="schematic" viewBox="0 0 380 320" role="img" aria-labelledby="schematic-emitter">
+        <title id="schematic-emitter">วงจร BJT NPN common-emitter แบบ emitter bias แหล่งจ่ายเดียว: RB จาก VCC ไปเบส RC จาก VCC ไปคอลเลกเตอร์ และ RE จากอิมิตเตอร์ลงกราวด์</title>
+        <g class="wire">
+          <path d="M70 40 H300"/>
+          <path d="M120 40 V75 M120 115 V150"/>
+          <path d="M250 40 V60 M250 100 V110 M250 190 V205 M250 245 V265"/>
+          <path d="M120 150 H180 M180 140 L216 124 L250 110 M180 160 L216 176 L250 190"/>
+        </g>
+        <g class="component">
+          <rect x="112" y="75" width="16" height="40"/>
+          <rect x="242" y="60" width="16" height="40"/>
+          <rect x="242" y="205" width="16" height="40"/>
+          <circle cx="196" cy="150" r="26"/>
+          <path d="M182 132 V168"/>
+        </g>
+        <path class="arrow" d="M203 167 L213 174 L200 175 Z"/>
+        <g class="node"><circle cx="120" cy="150" r="3.5"/><circle cx="250" cy="110" r="3.5"/></g>
+        <g class="ground"><path d="M240 265 H260 M243 271 H257 M246 277 H254"/></g>
+        <g class="labels">
+          <text x="250" y="26" text-anchor="middle">VCC</text>
+          <text x="102" y="99" text-anchor="end">RB</text>
+          <text x="268" y="84">RC</text>
+          <text x="268" y="229">RE</text>
+          <text x="196" y="196" text-anchor="middle">Q1</text>
+          <text x="250" y="296" text-anchor="middle">GND</text>
+        </g>
+      </svg>
+      {% else %}
       <svg class="schematic" viewBox="0 0 380 320" role="img"
            aria-labelledby="schematic-title">
         <title id="schematic-title">วงจร BJT NPN common-emitter แบบ voltage-divider bias:
@@ -97,6 +154,7 @@
           <text x="250" y="296" text-anchor="middle">GND</text>
         </g>
       </svg>
+      {% endif %}
       <p class="hint">แผนผังแสดงโครงสร้างวงจรเท่านั้น ไม่ได้วาดตามสัดส่วนจริง</p>
     </section>
   </div>
@@ -105,11 +163,12 @@
   {% set region_thai = {
     "active": "ไบแอสอยู่ในช่วง Forward-Active — แบบจำลอง β คงที่ใช้ได้",
     "saturation": "VCE ≤ 0.2 V — อยู่นอก active region ค่าที่แสดงมาจากสมการเชิงเส้น",
-    "cutoff": "IB ≤ 0 — ไม่มีกระแสไหลในวงจร"
+    "cutoff": "IB ≤ 0 — ไม่มีกระแสไหลในวงจร",
+    "model-limit": "IB ≤ 0 หรือ VCE ≤ 0.2 V — แบบจำลอง Forward Active อาจใช้ไม่ได้ ค่าที่แสดงเป็นค่าจากสมการเชิงเส้น"
   } %}
   <section class="card results" id="results">
     <div class="results-head">
-      <h2>DC Bias Results</h2>
+      <h2>DC Bias Results · {{ mode_label }}</h2>
       <span class="badge region-{{ result.region }}">{{ result.region|capitalize }}</span>
     </div>
 
@@ -127,8 +186,10 @@
     <p class="region-note">{{ region_thai.get(result.region, "") }}</p>
     {% if result.warning %}<p class="warning">{{ result.warning }}</p>{% endif %}
 
+    {% if mode == "divider" %}
     <p class="check">ตรวจทานอิสระ: {{ "ผ่าน" if result.check_passed else "ไม่ผ่าน" }}
       (ผลต่างสูงสุด {{ "%.2e"|format(result.check_max_rel_diff) }})</p>
+    {% endif %}
   </section>
   {% endif %}
 </main>
