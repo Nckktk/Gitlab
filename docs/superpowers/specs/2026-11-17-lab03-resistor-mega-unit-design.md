@@ -59,7 +59,7 @@ calculates correctly, since the odd output made them doubt the mode.
 
 ## Verification the builder must run
 
-- RED→GREEN one-off assertion: `rb=1, rb_unit=mohm` yields `rb == 1e6` and
+- RED→GREEN one-off assertion: `rb=1, rb_unit=megaohm` yields `rb == 1e6` and
   `IC 1.13 mA / VCE 9.514 V`; `rb_unit=bogus` still errors.
 - Independent Fixed check with several cases computed outside the app, e.g.
   `VCC=12, RB=470 kΩ, RC=2.2 kΩ, β=100, VBE=0.7` → hand result, then compare
