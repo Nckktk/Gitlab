@@ -25,28 +25,32 @@
 
 | ID | วิธีตรวจ | อินพุต | คาดหมายก่อนรัน | เห็นจริง (พร้อมหน่วย) | สถานะ | หลักฐาน |
 |---|---|---|---|---|---|---|
-| A1 · โหมดเดิม | NOT RUN | Divider R1=100 kΩ, R2=22 kΩ, RE=1 kΩ | `IC 1.22986 mA`, `VCE 8.05216 V` และตรงกับ Lab 2 ก่อนแก้ | — | NOT RUN | — |
-| A2 · Fixed | NOT RUN | Fixed RB=1 MΩ (กรอก 1000 kΩ) ไม่กรอก RE | `IC 1.13000 mA`, `VCE 9.51400 V` | — | NOT RUN | — |
-| A3 · Emitter | NOT RUN | Emitter RB=1 MΩ, RE=1 kΩ | `IC 1.02634 mA`, `VCE 8.70545 V` | — | NOT RUN | — |
-| A4 · เปลี่ยนค่าเดียว | NOT RUN | เหมือน A3 แต่ RE=2 kΩ | `IC` ลดลง; `0.94010 mA`, `VCE 8.03278 V` | — | NOT RUN | — |
-| A5 · อินพุตผิด | NOT RUN | Fixed RB=0 | ข้อความ `ต้องมากกว่าศูนย์`, เว็บไม่ล่ม, ไม่แสดงผลรอบก่อน | — | NOT RUN | — |
+| A1 · โหมดเดิม | Playwright (Python/Chrome) | Divider R1=100 kΩ, R2=22 kΩ, RE=1 kΩ | `IC 1.22986 mA`, `VCE 8.05216 V` และตรงกับ Lab 2 ก่อนแก้ | `IC 1.22986 mA`, `VCE 8.05216 V`, `IB 12.2986 µA` | PASS | DOM text: `DC BIAS RESULTS · VOLTAGE DIVIDER BIAS` |
+| A2 · Fixed | Playwright (Python/Chrome) | Fixed RB=1 MΩ (กรอก 1000 kΩ) ไม่กรอก RE | `IC 1.13000 mA`, `VCE 9.51400 V` | `IC 1.13 mA`, `VCE 9.514 V`, `VE 0 V`, `IB 11.3 µA` | PASS | `docs/evidence-a2.png` + DOM text `DC BIAS RESULTS · FIXED BIAS` |
+| A3 · Emitter | Playwright (Python/Chrome) | Emitter RB=1 MΩ, RE=1 kΩ | `IC 1.02634 mA`, `VCE 8.70545 V` | `IC 1.02634 mA`, `VCE 8.70545 V`, `VE 1.0366 V` | PASS | DOM text `DC BIAS RESULTS · EMITTER BIAS` |
+| A4 · เปลี่ยนค่าเดียว | Playwright (Python/Chrome) | เหมือน A3 แต่ RE=2 kΩ | `IC` ลดลง (ทำนายไว้); `0.94010 mA`, `VCE 8.03278 V` | `IC 940.1 µA` (= 0.9401 mA, ลดลงจาก A3), `VCE 8.03278 V`, `VE 1.899 V` | PASS | DOM text `DC BIAS RESULTS · EMITTER BIAS` |
+| A5 · อินพุตผิด | Playwright (Python/Chrome) | Fixed RB=0 | ข้อความ `ต้องมากกว่าศูนย์`, เว็บไม่ล่ม, ไม่แสดงผลรอบก่อน | ข้อความ `ต้องมากกว่าศูนย์`, ไม่มีบล็อก `DC Bias Results` | PASS | DOM error text from the live page |
 
-**เหตุผลของสถานะ NOT RUN (ขณะนี้):** session นี้ไม่มี browser tool (`browser_navigate`,
-`browser_snapshot` ฯลฯ) และไม่มี `node`/`npx` บน PATH สำหรับ `@playwright/mcp`
-จึงยังไม่มีหลักฐานจากหน้าเว็บจริง ตามใบงานห้ามใช้ `curl` หรือการอ่านโค้ด/Flask test client
-แทนการตรวจผ่าน Browser → จะพยายามเปิด browser จริงในขั้นตอนถัดไป ถ้าไม่สำเร็จจะคงสถานะ
-NOT RUN พร้อมข้อความข้อผิดพลาดที่เครื่องมือคืนมา
+**วิธีที่ใช้จริง:** เปิด Chrome (headless) ด้วย Playwright สำหรับ Python ที่ติดตั้ง **เฉพาะใน
+`.venv` ของ worktree** (dev-only ไม่ได้ใส่ `requirements.txt` และไม่ได้ติดตั้ง Node)
+สคริปต์เปิด `http://127.0.0.1:5000/` ทุกกรณี เลือกโหมด → กด `เปลี่ยนโหมด` → กรอกฟอร์มจริง
+→ กดคำนวณ → อ่านข้อความจากหน้าเว็บที่เพิ่ง render และเก็บ screenshot ของ A2
+
+**ทำไมไม่ใช่ Playwright MCP:** session นี้ไม่มี browser tool (`browser_navigate`,
+`browser_snapshot`) และไม่มี `node`/`npx` บน PATH สำหรับ `@playwright/mcp` ตามที่
+`opencode.json` ตั้งค่าไว้ ไฟล์ config ยังอยู่ใน repo เพื่อให้รันผ่าน MCP ได้บนเครื่องที่มี
+Node ตามใบงาน ไม่มีการใช้ `curl` หรือการอ่านโค้ดแทนผลจากหน้าเว็บ
 
 ## หลักฐานที่ไม่ใช่ Browser (รันจริงแล้ว)
 
-- ชุดทดสอบเดิม `pytest bjt_bias\tests -q` → ผ่าน (43 tests)
+- ชุดทดสอบเดิม `pytest bjt_bias\tests -q` → **43 passed in 0.24s** (รันซ้ำหลังตรวจ browser)
 - ตรวจสมการโดยตรง: Fixed `RB=1000 kΩ` ได้ `IC=1.13 mA`, `VCE=9.514 V`;
   Emitter `RE=1 kΩ` ได้ `IC≈1.02634 mA`, `VCE≈8.70545 V`;
   Emitter `RE=2 kΩ` ได้ `IC≈0.94010 mA`, `VCE≈8.03278 V`
 - ตรวจ route ด้วย Flask test client: โหมดผิดได้ข้อความ `โหมดไม่ถูกต้อง`,
   `RB=0` ได้ `ต้องมากกว่าศูนย์` และไม่มีบล็อกผลลัพธ์, กด `เปลี่ยนโหมด` แล้วไม่มีผลค้าง
 
-> รายการด้านบนเป็นการตรวจฝั่งเซิร์ฟเวอร์เท่านั้น **ไม่ถือเป็น browser PASS**
+> รายการในหัวข้อนี้เป็นการตรวจฝั่งเซิร์ฟเวอร์เพิ่มเติม ส่วน browser PASS อยู่ในตาราง A1–A5 ด้านบน
 
 ## ไล่ข้อมูลหนึ่งรอบ (คำถามปิด Lab)
 
