@@ -190,8 +190,11 @@ def create_app() -> Flask:
             mode = (form.get("mode") or MODE_DIVIDER).strip()
             fields = MODE_FIELDS_META.get(mode, MODE_FIELDS_META[MODE_DIVIDER])
             spice_analysis = (form.get("spice_analysis") or "op").strip()
+            if "spice_analysis_run" in request.form:
+                spice_analysis = (request.form.get("spice_analysis_run") or spice_analysis).strip()
             if spice_analysis not in SPICE_ANALYSES:
                 spice_analysis = "op"
+            form["spice_analysis"] = spice_analysis
 
             if "change_mode" in request.form:
                 return render_template(
@@ -214,7 +217,7 @@ def create_app() -> Flask:
                     default_bjt_model=DEFAULT_BJT_MODEL_NAME,
                 )
 
-            if "run_spice" in request.form:
+            if "run_spice" in request.form or "spice_analysis_run" in request.form:
                 # Preserve analytical result display for divider inputs when possible.
                 result = None
                 errors: dict[str, str] = {}

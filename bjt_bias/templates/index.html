@@ -117,7 +117,7 @@
         <div class="panel-head"><h2>Simulation &amp; Plots</h2></div>
         <div class="analysis-tabs">
           {% for a in spice_analyses %}
-          <span class="tab {{ 'tab-active' if spice_analysis == a else '' }}">{{ spice_analysis_labels[a] }}</span>
+          <button type="submit" name="spice_analysis_run" value="{{ a }}" class="tab tab-btn {{ 'tab-active' if spice_analysis == a else '' }}">{{ spice_analysis_labels[a] }}</button>
           {% endfor %}
         </div>
 

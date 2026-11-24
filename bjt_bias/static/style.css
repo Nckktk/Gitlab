@@ -59,8 +59,10 @@ body { margin: 0; font-family: Tahoma, "Noto Sans Thai", "Leelawadee UI", system
 .secondary-btn { margin:0; width:auto; white-space:nowrap; background:#eef4fa; color:var(--navy); border:1px solid var(--line); padding:7px 10px; }
 .secondary-btn:hover { background:#ddeaf5; }
 .analysis-tabs { display:flex; gap:8px; padding:12px 14px 0; flex-wrap:wrap; }
-.tab { padding:6px 12px; border-radius:6px; font-size:0.8rem; font-weight:700; background:#e6eff7; color:var(--navy-2); }
-.tab-active { background:var(--teal-soft); color:var(--teal); }
+.tab { padding:8px 14px; border-radius:6px; font-size:0.85rem; font-weight:700; background:#e6eff7; color:var(--navy-2); }
+.tab-btn { border:1px solid #c6d8e6; cursor:pointer; font:inherit; font-size:0.85rem; font-weight:700; }
+.tab-btn:hover { filter: brightness(0.98); transform: translateY(-1px); }
+.tab-active { background:var(--teal-soft); color:var(--teal); border-color:#a7cfc2; }
 .plot-card, .result-block { margin:12px 14px 0; border:1px solid var(--line-soft); border-radius:6px; background:#fbfdff; padding:12px; }
 .plot-title, .result-label { font-size:0.82rem; font-weight:700; color:var(--navy); text-transform:uppercase; letter-spacing:0.04em; }
 .result-sub { font-size:0.8rem; color:var(--muted); margin-top:2px; }
