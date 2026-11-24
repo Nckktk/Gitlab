@@ -116,9 +116,9 @@ class TestLayout(unittest.TestCase):
 
     def test_unit_selects_default_to_kilo_ohms(self):
         body = self.client.get("/").get_data(as_text=True)
-        for field in ("r1", "r2", "rc", "re"):
+        for field in ("r1", "r2", "rc", "re", "rl"):
             self.assertIn(f'name="{field}_unit"', body)
-        self.assertEqual(body.count('<option value="kohm" selected>'), 4)
+        self.assertEqual(body.count('<option value="kohm" selected>'), 5)
 
     def test_unit_selection_is_preserved_after_submit(self):
         data = {**HANDOUT, "r1_unit": "ohm", "r1": "10000"}

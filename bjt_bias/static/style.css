@@ -354,3 +354,21 @@ button:hover { background: var(--blue); }
 }
 
 .region-model-limit { color: #7a2e00; background: #fff1e8; }
+
+.spice-controls {
+  margin-top: 1rem;
+  padding: 0.8rem 0;
+  border-top: 1px dashed var(--line);
+}
+.spice-controls summary {
+  cursor: pointer;
+  font-weight: bold;
+  color: var(--navy);
+  margin-bottom: 0.6rem;
+}
+.spice-controls .fields { margin-top: 0.75rem; }
+.spice-meta { display:flex; gap:0.5rem; flex-wrap:wrap; margin:0.75rem 0; }
+.plot-wrap { width:100%; overflow-x:auto; margin:0.75rem 0; }
+.plot-canvas { width:100%; max-width:100%; height:auto; border:1px solid var(--line); border-radius:8px; background:#fff; }
+.log-block { background:#f7fafc; border:1px solid var(--line); border-radius:8px; padding:0.75rem; overflow:auto; font-size:0.78rem; white-space:pre-wrap; word-break:break-word; }
+details > summary { cursor:pointer; color: var(--blue); font-weight:bold; margin:0.5rem 0; }

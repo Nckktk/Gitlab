@@ -1,26 +1,35 @@
-# BJT Common-Emitter DC Bias — ENG29 2121
+# BJT Bias / CE Amplifier Simulator — ENG29 2121
 
-เว็บแอป Flask สำหรับคำนวณ DC operating point ของวงจรไบแอส BJT แบบ
-common-emitter (voltage-divider bias) จากค่า `VCC, R1, R2, RC, RE, beta, VBE`
-พร้อม validation, region warning และการตรวจทานด้วยสมการอิสระอีกชุด
+Flask web app สำหรับ Lab 3/Lab 4: คำนวณ DC bias แบบ Analytical 3 โหมด และจำลอง CE Voltage Divider reference ด้วย ngspice (`.op/.ac/.tran`).
 
-ขอบเขต: **DC bias เท่านั้น** — ไม่มี AC, transient, load line, circuit editor หรือ FET
+## ความสามารถ
+
+- **Analytical DC Bias 3 โหมด:** Voltage Divider, Fixed Bias, Emitter Bias (pure Python ใน `engineering.py`).
+- **SPICE CE Reference:** เรียก ngspice ภายนอกผ่าน `spice_engine.py` เพื่อรัน `.op`, `.ac`, `.tran` สำหรับวงจร CE voltage divider อ้างอิง. แยก provenance ว่าเป็นผล SPICE ไม่ใช่ Analytical.
+- **Validation/Errors:** input validation, timeout/process error handling, ไม่แสดงกราฟปลอมเมื่อ run fail.
 
 ## โครงสร้าง
 
 | ไฟล์ | หน้าที่ |
 |---|---|
-| `engineering.py` | สูตรบริสุทธิ์ (ไม่ import Flask) — validate, แปลงหน่วย, Thevenin, nodal, cross-check, region |
-| `app.py` | Flask route และ Jinja filter สำหรับจัดรูปแบบตัวเลข |
-| `templates/index.html` | ฟอร์ม + แผนผังวงจร SVG + ตารางผล + error/warning |
-| `static/style.css` | จัดหน้าแบบการ์ด สองคอลัมน์ |
-| `tests/` | unit test ของสูตร และ route test ด้วย Flask test client |
+| `engineering.py` | สูตร Analytical DC bias (Flask-free) |
+| `spice_engine.py` | สร้าง netlist, รัน ngspice subprocess, parse output |
+| `app.py` | Flask route, validation, dispatch Analytical/SPICE |
+| `templates/index.html` | ฟอร์ม, schematic, ผล Analytical, SPICE status/plots |
+| `static/style.css` | สไตล์ responsive |
+| `tests/` | pytest unit/integration tests (รวม mocked SPICE) |
 
 ## ติดตั้ง
 
 ```powershell
 python -m venv .venv
 .venv\Scripts\python -m pip install -r bjt_bias\requirements.txt
+```
+
+ติดตั้ง ngspice จากระบบปฏิบัติการแล้วตรวจสอบ:
+
+```powershell
+ngspice --version
 ```
 
 ## รัน
@@ -31,85 +40,21 @@ python -m venv .venv
 
 เปิด `http://127.0.0.1:5000`
 
-> `bjt_bias/app.py` มี `app.run(debug=True)` สำหรับรันตรง ๆ — อย่าเปิด debugger นี้สู่เครือข่ายสาธารณะ เพราะเปิดให้รันโค้ดจากระยะไกลได้
-
 ## ทดสอบ
 
 ```powershell
 .venv\Scripts\python -m pytest bjt_bias\tests -q
 ```
 
-## หน่วย
+## SPICE Reference Circuit (v1)
 
-| ปริมาณ | รับเข้า | คำนวณภายใน | แสดงผล |
-|---|---|---|---|
-| VCC, VBE | V | V | V |
-| R1, R2, RC, RE | Ω หรือ kΩ (เลือกจาก dropdown) | Ω | — |
-| beta | ไม่มีหน่วย | — | — |
-| IB, IC, IE | — | A | A / mA / µA / nA อัตโนมัติ |
-| VB, VE, VC, VCE | — | V | V |
+- Topology: CE Voltage Divider, NPN, Cin/Cout/RL, no emitter bypass (baseline)
+- Default inputs: VCC 12V, R1 100kΩ, R2 22kΩ, RC 2.2kΩ, RE 1kΩ, RL 10kΩ, Cin 10µF, Cout 10µF, 10mVpk 1kHz
+- Model: `Q2N3904_GENERIC` (generic approximation in code; replace with instructor starter model before official validation)
 
-- ค่า kΩ ถูกคูณ 1,000 ให้เป็น Ω **ก่อน** คำนวณและก่อนตรวจขอบเขต `1e12`
-- ตัวเลขทุกตัวแสดง 6 significant figures (`%.6g`)
-- ถ้าไม่ส่ง `*_unit` มา (เช่นเรียกด้วย curl หรือ test ตรง) ระบบถือว่าเป็น Ω
+## สมมติฐาน/ข้อจำกัด
 
-## แบบจำลองและสมมติฐาน
-
-- ใช้ **Forward-Active Approximation**: β คงที่ตลอดช่วงการทำงาน และ VBE คงที่ตามค่าที่กรอก
-- ไม่คิด **Early effect** (ไม่มีความต้านทานเอาต์พุต `ro`) และไม่คิดความต้านทาน base ที่ขึ้นกับกระแส
-- กระแสอิ่มตัวย้อนกลับ (leakage) เป็นศูนย์
-- สมการเชิงเส้นใช้ได้เฉพาะใน active region — นอกช่วงนี้หน้าเว็บจะขึ้น warning และค่าที่แสดงไม่ได้มาจากการจำลองที่แม่นยำ
-- แผนผังวงจรในหน้าเว็บเป็นภาพประกอบโครงสร้าง ไม่ได้วาดตามสัดส่วนหรือค่าอุปกรณ์จริง
-
-## สมการ
-
-**วิธีที่ 1 — Thevenin equivalent**
-
-```
-VBB = VCC * R2 / (R1 + R2)
-RB  = R1 * R2 / (R1 + R2)
-IB  = (VBB - VBE) / (RB + (beta + 1) * RE)
-IC  = beta * IB
-IE  = (beta + 1) * IB
-VE  = IE * RE
-VC  = VCC - IC * RC
-VCE = VC - VE
-```
-
-**วิธีที่ 2 — Nodal analysis** (ตรวจทานอิสระ)
-
-ใช้ `VB = VE + VBE` แล้วตั้ง KCL ที่โหนด B และ E:
-
-```
-(VE + VBE - VCC)/R1 + (VE + VBE)/R2 + VE/((beta + 1) * RE) = 0
-```
-
-แก้หา `VE` แล้วได้ `IE = VE / RE`, `IC = beta/(beta + 1) * IE`
-ทั้งสองวิธีต้องตรงกันที่ relative tolerance `1e-9` มิฉะนั้นหน้าเว็บจะขึ้น "ไม่ผ่าน"
-
-## เกณฑ์ region
-
-| เงื่อนไข | Region | ค่าที่รายงาน |
-|---|---|---|
-| `IB <= 0` | Cutoff | `IB = IC = IE = 0`, `VE = 0`, `VC = VCE = VCC` |
-| `VCE <= 0.2 V` | Saturation + warning | ค่าจาก linear model ตามจริง (ไม่ clamp) |
-| อื่น ๆ | Active | ค่าจาก linear model |
-
-## ตัวอย่าง
-
-ข้อมูลทดลองเริ่มต้นของ Lab 2: `VCC=12 V, R1=100 kΩ, R2=22 kΩ, RC=2.2 kΩ, RE=1 kΩ, beta=100, VBE=0.70 V`
-(กรอกในช่อง R1…RE เป็น `100, 22, 2.2, 1` แล้วเลือก kΩ)
-
-```
-IB  = 12.2986 µA      IC = 1.22986 mA     IE = 1.24216 mA
-VB  = 1.94216 V       VE = 1.24216 V      VC = 9.29431 V
-VCE = 8.05216 V       region = Active
-```
-
-อีกตัวอย่าง: `VCC=12, R1=10000 Ω, R2=2200 Ω, RC=1000 Ω, RE=470 Ω, beta=150, VBE=0.7`
-
-```
-IB  = 20.1164 µA      IC = 3.01746 mA     IE = 3.03757 mA
-VB  = 2.12766 V       VE = 1.42766 V      VC = 8.98254 V
-VCE = 7.55489 V       region = Active
-```
+- Analytical ใช้สมมติฐาน BJT idealized (β, VBE ตามที่กรอก) และไม่เหมือน SPICE model ทุกประการ.
+- SPICE `.op` รายงาน node voltages/currents จาก ngspice; ค่า IC แสดงจาก current probe ของแหล่ง VCC (`-i(vcc)`).
+- AC gain plot ใช้ `v(out)` จาก AC analysis โดยตั้ง AC source magnitude = 1 (อ่านเป็น gain โดยตรง); ต้องระบุจุดวัด/สมมติฐานในรายงานเมื่อตรวจจริง.
+- หาก ngspice ไม่พร้อม/รันผิดพลาด/timeout ระบบต้องแสดง error และไม่แสดง success ปลอม.
