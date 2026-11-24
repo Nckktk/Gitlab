@@ -3,232 +3,205 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>BJT DC Bias — ENG29 2121</title>
+  <title>BJT CE Amplifier Simulator — ENG29 2121</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 <main class="page">
-  <header class="masthead">
-    <div>
-      <h1>BJT DC Bias Calculator</h1>
-      <p class="subtitle">Common-Emitter · {{ mode_label }}</p>
+  <header class="topbar">
+    <div class="topbar-brand">
+      <h1>CE Amplifier Lab</h1>
+      <p>DC Bias / AC / Transient</p>
     </div>
-    <p class="course">ENG29 2121 · Lab 3 / Lab 4</p>
+    <div class="topbar-meta">
+      <span class="pill">ENG29 2121</span>
+      <span class="pill {{ 'pill-ok' if spice_available else 'pill-warn' }}">ngspice: {{ spice_version if spice_available else 'not found' }}</span>
+    </div>
   </header>
 
-  <div class="layout">
-    <section class="card">
-      <h2>Input Parameters</h2>
-      <form method="post" action="/">
-        <div class="mode-bar">
-          <div class="field mode-field">
-            <label for="mode">Bias Mode</label>
-            <div class="control mode-control">
-              <select id="mode" name="mode">
-                {% for m in modes %}
-                <option value="{{ m }}"{% if mode == m %} selected{% endif %}>{{ mode_labels[m] }}</option>
-                {% endfor %}
-              </select>
-              <button type="submit" name="change_mode" value="1" class="secondary-btn">เปลี่ยนโหมด</button>
+  <form method="post" action="/" class="sim-form">
+    <div class="workspace">
+      <section class="panel panel-left">
+        <div class="panel-head"><h2>Circuit &amp; Parameters</h2></div>
+
+        <div class="circuit-box">
+          {% if mode == 'fixed' %}
+          <svg class="schematic" viewBox="0 0 380 320" role="img" aria-labelledby="schematic-title-fixed">
+            <title id="schematic-title-fixed">วงจร BJT NPN common-emitter แบบ fixed bias</title>
+            <g class="wire"><path d="M70 40 H300"/><path d="M120 40 V75 M120 115 V150 M120 150 H180"/><path d="M250 40 V60 M250 100 V110 M250 190 V265"/><path d="M180 140 L216 124 L250 110"/><path d="M180 160 L216 176 L250 190"/></g>
+            <g class="component"><rect x="112" y="75" width="16" height="40"/><rect x="242" y="60" width="16" height="40"/><circle cx="196" cy="150" r="26"/><path d="M182 132 V168"/></g>
+            <path class="arrow" d="M203 167 L213 174 L200 175 Z"/>
+            <g class="node"><circle cx="120" cy="150" r="3.5"/><circle cx="250" cy="110" r="3.5"/></g>
+            <g class="ground"><path d="M240 265 H260 M243 271 H257 M246 277 H254"/></g>
+            <g class="labels"><text x="250" y="26" text-anchor="middle">VCC</text><text x="102" y="99" text-anchor="end">RB</text><text x="268" y="84">RC</text><text x="196" y="196" text-anchor="middle">Q1</text><text x="250" y="296" text-anchor="middle">GND</text></g>
+          </svg>
+          {% elif mode == 'emitter' %}
+          <svg class="schematic" viewBox="0 0 380 320" role="img" aria-labelledby="schematic-title-emitter">
+            <title id="schematic-title-emitter">วงจร BJT NPN common-emitter แบบ emitter bias</title>
+            <g class="wire"><path d="M70 40 H300"/><path d="M120 40 V75 M120 115 V150 M120 150 H180"/><path d="M250 40 V60 M250 100 V110 M250 190 V205 M250 245 V265"/><path d="M180 140 L216 124 L250 110"/><path d="M180 160 L216 176 L250 190"/></g>
+            <g class="component"><rect x="112" y="75" width="16" height="40"/><rect x="242" y="60" width="16" height="40"/><rect x="242" y="205" width="16" height="40"/><circle cx="196" cy="150" r="26"/><path d="M182 132 V168"/></g>
+            <path class="arrow" d="M203 167 L213 174 L200 175 Z"/>
+            <g class="node"><circle cx="120" cy="150" r="3.5"/><circle cx="250" cy="110" r="3.5"/></g>
+            <g class="ground"><path d="M240 265 H260 M243 271 H257 M246 277 H254"/></g>
+            <g class="labels"><text x="250" y="26" text-anchor="middle">VCC</text><text x="102" y="99" text-anchor="end">RB</text><text x="268" y="84">RC</text><text x="268" y="229">RE</text><text x="196" y="196" text-anchor="middle">Q1</text><text x="250" y="296" text-anchor="middle">GND</text></g>
+          </svg>
+          {% else %}
+          <svg class="schematic" viewBox="0 0 380 320" role="img" aria-labelledby="schematic-title">
+            <title id="schematic-title">วงจร BJT NPN common-emitter แบบ voltage-divider bias</title>
+            <g class="wire"><path d="M70 40 H300"/><path d="M120 40 V75 M120 115 V150 M120 150 V175 M120 215 V265"/><path d="M250 40 V60 M250 100 V110 M250 190 V205 M250 245 V265"/><path d="M120 150 H180"/><path d="M180 140 L216 124 L250 110"/><path d="M180 160 L216 176 L250 190"/></g>
+            <g class="component"><rect x="112" y="75" width="16" height="40"/><rect x="112" y="175" width="16" height="40"/><rect x="242" y="60" width="16" height="40"/><rect x="242" y="205" width="16" height="40"/><circle cx="196" cy="150" r="26"/><path d="M182 132 V168"/></g>
+            <path class="arrow" d="M203 167 L213 174 L200 175 Z"/>
+            <g class="node"><circle cx="120" cy="150" r="3.5"/><circle cx="250" cy="110" r="3.5"/></g>
+            <g class="ground"><path d="M110 265 H130 M113 271 H127 M116 277 H124"/><path d="M240 265 H260 M243 271 H257 M246 277 H254"/></g>
+            <g class="labels"><text x="250" y="26" text-anchor="middle">VCC</text><text x="102" y="99" text-anchor="end">R1</text><text x="102" y="199" text-anchor="end">R2</text><text x="268" y="84">RC</text><text x="268" y="229">RE</text><text x="196" y="196" text-anchor="middle">Q1</text><text x="120" y="296" text-anchor="middle">GND</text><text x="250" y="296" text-anchor="middle">GND</text></g>
+          </svg>
+          {% endif %}
+        </div>
+
+        <div class="subpanel">
+          <div class="subpanel-title">Bias Mode</div>
+          <div class="mode-row">
+            <select id="mode" name="mode">
+              {% for m in modes %}
+              <option value="{{ m }}"{% if mode == m %} selected{% endif %}>{{ mode_labels[m] }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" name="change_mode" value="1" class="secondary-btn">เปลี่ยนโหมด</button>
+          </div>
+          {% if errors.get('mode') %}<p class="error">{{ errors['mode'] }}</p>{% endif %}
+        </div>
+
+        <div class="subpanel">
+          <div class="subpanel-title">Input Parameters</div>
+          <div class="fields compact-fields">
+            {% for name, label, kind in fields %}
+            <div class="field">
+              <label for="{{ name }}">{{ label }}</label>
+              <div class="control">
+                <input id="{{ name }}" name="{{ name }}" value="{{ form.get(name, '') }}" inputmode="decimal" autocomplete="off">
+                {% if kind == "resistor" %}
+                {% set unit = form.get(name ~ "_unit") or "kohm" %}
+                <select id="{{ name }}_unit" name="{{ name }}_unit" aria-label="หน่วยของ {{ label }}">
+                  <option value="ohm"{% if unit == "ohm" %} selected{% endif %}>Ω</option>
+                  <option value="kohm"{% if unit != "ohm" %} selected{% endif %}>kΩ</option>
+                </select>
+                {% else %}
+                <span class="unit">{{ kind }}</span>
+                {% endif %}
+              </div>
+              {% if errors.get(name) %}<p class="error">{{ errors[name] }}</p>{% endif %}
             </div>
-            {% if errors.get('mode') %}<p class="error">{{ errors['mode'] }}</p>{% endif %}
+            {% endfor %}
           </div>
         </div>
 
-        <div class="fields">
-          {% for name, label, kind in fields %}
-          <div class="field">
-            <label for="{{ name }}">{{ label }}</label>
-            <div class="control">
-              <input id="{{ name }}" name="{{ name }}" value="{{ form.get(name, '') }}"
-                     inputmode="decimal" autocomplete="off">
-              {% if kind == "resistor" %}
-              {% set unit = form.get(name ~ "_unit") or "kohm" %}
-              <select id="{{ name }}_unit" name="{{ name }}_unit" aria-label="หน่วยของ {{ label }}">
-                <option value="ohm"{% if unit == "ohm" %} selected{% endif %}>Ω</option>
-                <option value="kohm"{% if unit != "ohm" %} selected{% endif %}>kΩ</option>
-              </select>
-              {% else %}
-              <span class="unit">{{ kind }}</span>
-              {% endif %}
-            </div>
-            {% if errors.get(name) %}<p class="error">{{ errors[name] }}</p>{% endif %}
+        <div class="subpanel">
+          <div class="subpanel-title">AC / Transient Source</div>
+          <div class="fields compact-fields">
+            <div class="field"><label for="rl">RL</label><div class="control"><input id="rl" name="rl" value="{{ form.get('rl', '10') }}" inputmode="decimal">{% set rl_unit = form.get('rl_unit') or 'kohm' %}<select id="rl_unit" name="rl_unit" aria-label="หน่วยของ RL"><option value="ohm"{% if rl_unit == 'ohm' %} selected{% endif %}>Ω</option><option value="kohm"{% if rl_unit != 'ohm' %} selected{% endif %}>kΩ</option></select></div>{% if errors.get('rl') %}<p class="error">{{ errors['rl'] }}</p>{% endif %}</div>
+            <div class="field"><label for="cin_u">Cin</label><div class="control"><input id="cin_u" name="cin_u" value="{{ form.get('cin_u', '10') }}" inputmode="decimal"><span class="unit">µF</span></div></div>
+            <div class="field"><label for="cout_u">Cout</label><div class="control"><input id="cout_u" name="cout_u" value="{{ form.get('cout_u', '10') }}" inputmode="decimal"><span class="unit">µF</span></div></div>
+            <div class="field"><label for="amplitude_mv">Amplitude</label><div class="control"><input id="amplitude_mv" name="amplitude_mv" value="{{ form.get('amplitude_mv', '10') }}" inputmode="decimal"><span class="unit">mVpk</span></div></div>
+            <div class="field"><label for="frequency_hz">Frequency</label><div class="control"><input id="frequency_hz" name="frequency_hz" value="{{ form.get('frequency_hz', '1000') }}" inputmode="decimal"><span class="unit">Hz</span></div></div>
+            <div class="field"><label for="spice_analysis">Analysis</label><div class="control"><select id="spice_analysis" name="spice_analysis">{% for a in spice_analyses %}<option value="{{ a }}"{% if spice_analysis == a %} selected{% endif %}>{{ spice_analysis_labels[a] }}</option>{% endfor %}</select></div></div>
           </div>
+        </div>
+
+        <div class="action-row">
+          <button type="submit" class="primary-btn">คำนวณ DC Bias</button>
+          <button type="submit" name="run_spice" value="1" class="run-btn">Run Simulation</button>
+        </div>
+      </section>
+
+      <section class="panel panel-mid">
+        <div class="panel-head"><h2>Simulation &amp; Plots</h2></div>
+        <div class="analysis-tabs">
+          {% for a in spice_analyses %}
+          <span class="tab {{ 'tab-active' if spice_analysis == a else '' }}">{{ spice_analysis_labels[a] }}</span>
           {% endfor %}
         </div>
 
-        <details class="spice-controls" {% if spice_result or spice_error %}open{% endif %}>
-          <summary>Lab 4 · ngspice CE Reference (DC/AC/Transient)</summary>
-          <p class="hint">SPICE path นี้ใช้วงจร CE Voltage Divider อ้างอิง (ต้องมี R1,R2,RC,RE,VCC,beta,VBE). ผล SPICE แยกจากผล Analytical.</p>
-          <div class="fields">
-            <div class="field">
-              <label for="rl">RL</label>
-              <div class="control">
-                <input id="rl" name="rl" value="{{ form.get('rl', '10') }}" inputmode="decimal" autocomplete="off">
-                {% set rl_unit = form.get('rl_unit') or 'kohm' %}
-                <select id="rl_unit" name="rl_unit" aria-label="หน่วยของ RL">
-                  <option value="ohm"{% if rl_unit == 'ohm' %} selected{% endif %}>Ω</option>
-                  <option value="kohm"{% if rl_unit != 'ohm' %} selected{% endif %}>kΩ</option>
-                </select>
-              </div>
-              {% if errors.get('rl') %}<p class="error">{{ errors['rl'] }}</p>{% endif %}
-            </div>
-            <div class="field">
-              <label for="cin_u">Cin</label>
-              <div class="control"><input id="cin_u" name="cin_u" value="{{ form.get('cin_u', '10') }}" inputmode="decimal"><span class="unit">µF</span></div>
-              {% if errors.get('cin_u') %}<p class="error">{{ errors['cin_u'] }}</p>{% endif %}
-            </div>
-            <div class="field">
-              <label for="cout_u">Cout</label>
-              <div class="control"><input id="cout_u" name="cout_u" value="{{ form.get('cout_u', '10') }}" inputmode="decimal"><span class="unit">µF</span></div>
-              {% if errors.get('cout_u') %}<p class="error">{{ errors['cout_u'] }}</p>{% endif %}
-            </div>
-            <div class="field">
-              <label for="amplitude_mv">Amplitude</label>
-              <div class="control"><input id="amplitude_mv" name="amplitude_mv" value="{{ form.get('amplitude_mv', '10') }}" inputmode="decimal"><span class="unit">mVpk</span></div>
-              {% if errors.get('amplitude_mv') %}<p class="error">{{ errors['amplitude_mv'] }}</p>{% endif %}
-            </div>
-            <div class="field">
-              <label for="frequency_hz">Frequency</label>
-              <div class="control"><input id="frequency_hz" name="frequency_hz" value="{{ form.get('frequency_hz', '1000') }}" inputmode="decimal"><span class="unit">Hz</span></div>
-              {% if errors.get('frequency_hz') %}<p class="error">{{ errors['frequency_hz'] }}</p>{% endif %}
-            </div>
-            <div class="field">
-              <label for="spice_analysis">Analysis</label>
-              <div class="control">
-                <select id="spice_analysis" name="spice_analysis">
-                  {% for a in spice_analyses %}
-                  <option value="{{ a }}"{% if spice_analysis == a %} selected{% endif %}>{{ spice_analysis_labels[a] }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
+        {% if spice_error %}
+        <p class="warning">SPICE Error: {{ spice_error }}</p>
+        {% endif %}
+
+        {% if spice_result %}
+          {% if spice_result.analysis == 'op' and spice_result.op %}
+          <div class="plot-card">
+            <div class="plot-title">DC Operating Point (ngspice)</div>
+            <dl class="readings readings-compact">
+              <div><dt>VB (SPICE)</dt><dd>{{ spice_result.op.vb|voltage }}</dd></div>
+              <div><dt>VE (SPICE)</dt><dd>{{ spice_result.op.ve|voltage }}</dd></div>
+              <div><dt>VC (SPICE)</dt><dd>{{ spice_result.op.vc|voltage }}</dd></div>
+              <div><dt>VCE (SPICE)</dt><dd>{{ spice_result.op.vce|voltage }}</dd></div>
+              <div><dt>IC (SPICE)</dt><dd>{{ spice_result.op.ic|current }}</dd></div>
+            </dl>
           </div>
-          <div class="spice-meta">
-            <span class="badge {{ 'region-active' if spice_available else 'region-model-limit' }}">ngspice: {{ spice_version if spice_available else 'ไม่พบใน PATH' }}</span>
-            <span class="badge">Model: {{ default_bjt_model }}</span>
+          {% elif spice_result.analysis == 'ac' and spice_result.ac %}
+          <div class="plot-card"><div class="plot-title">Bode Magnitude</div><div class="plot-wrap"><canvas id="ac-mag" class="plot-canvas" width="900" height="260"></canvas></div></div>
+          <div class="plot-card"><div class="plot-title">Bode Phase</div><div class="plot-wrap"><canvas id="ac-phase" class="plot-canvas" width="900" height="220"></canvas></div></div>
+          <script id="ac-data" type="application/json">{{ spice_result.ac | tojson }}</script>
+          {% elif spice_result.analysis == 'tran' and spice_result.tran %}
+          <div class="plot-card"><div class="plot-title">Transient Response (Vin/Vout vs Time)</div><div class="plot-wrap"><canvas id="tran-plot" class="plot-canvas" width="900" height="320"></canvas></div></div>
+          <script id="tran-data" type="application/json">{{ spice_result.tran | tojson }}</script>
+          {% endif %}
+          <details class="log-details"><summary>Netlist / log tail</summary><pre class="log-block">{{ spice_result.netlist }}</pre><pre class="log-block">{{ spice_result.log_tail }}</pre></details>
+        {% else %}
+          <div class="plot-card placeholder-plot">
+            <div class="plot-title">พร้อมรัน Simulation</div>
+            <p class="hint">เลือก Analysis แล้วกด <strong>Run Simulation</strong> เพื่อเรียก ngspice จริง. กราฟจะแสดงเฉพาะเมื่อมีข้อมูลจาก engine.</p>
           </div>
-          <button type="submit" name="run_spice" value="1">Run ngspice</button>
-        </details>
+        {% endif %}
+      </section>
 
-        <button type="submit">คำนวณ DC Bias</button>
-      </form>
-    </section>
+      <section class="panel panel-right">
+        <div class="panel-head"><h2>Engineering Results</h2></div>
 
-    <section class="card">
-      <h2>Circuit</h2>
-      {% if mode == 'fixed' %}
-      <svg class="schematic" viewBox="0 0 380 320" role="img" aria-labelledby="schematic-title-fixed">
-        <title id="schematic-title-fixed">วงจร BJT NPN common-emitter แบบ fixed bias: RB จาก VCC ไปเบส, RC จาก VCC ไปคอลเลกเตอร์, อิมิตเตอร์ลงกราวด์</title>
-        <g class="wire"><path d="M70 40 H300"/><path d="M120 40 V75 M120 115 V150 M120 150 H180"/><path d="M250 40 V60 M250 100 V110 M250 190 V265"/><path d="M180 140 L216 124 L250 110"/><path d="M180 160 L216 176 L250 190"/></g>
-        <g class="component"><rect x="112" y="75" width="16" height="40"/><rect x="242" y="60" width="16" height="40"/><circle cx="196" cy="150" r="26"/><path d="M182 132 V168"/></g>
-        <path class="arrow" d="M203 167 L213 174 L200 175 Z"/>
-        <g class="node"><circle cx="120" cy="150" r="3.5"/><circle cx="250" cy="110" r="3.5"/></g>
-        <g class="ground"><path d="M240 265 H260 M243 271 H257 M246 277 H254"/></g>
-        <g class="labels"><text x="250" y="26" text-anchor="middle">VCC</text><text x="102" y="99" text-anchor="end">RB</text><text x="268" y="84">RC</text><text x="196" y="196" text-anchor="middle">Q1</text><text x="250" y="296" text-anchor="middle">GND</text></g>
-      </svg>
-      {% elif mode == 'emitter' %}
-      <svg class="schematic" viewBox="0 0 380 320" role="img" aria-labelledby="schematic-title-emitter">
-        <title id="schematic-title-emitter">วงจร BJT NPN common-emitter แบบ emitter bias: RB จาก VCC ไปเบส, RC จาก VCC ไปคอลเลกเตอร์, RE จากอิมิตเตอร์ลงกราวด์</title>
-        <g class="wire"><path d="M70 40 H300"/><path d="M120 40 V75 M120 115 V150 M120 150 H180"/><path d="M250 40 V60 M250 100 V110 M250 190 V205 M250 245 V265"/><path d="M180 140 L216 124 L250 110"/><path d="M180 160 L216 176 L250 190"/></g>
-        <g class="component"><rect x="112" y="75" width="16" height="40"/><rect x="242" y="60" width="16" height="40"/><rect x="242" y="205" width="16" height="40"/><circle cx="196" cy="150" r="26"/><path d="M182 132 V168"/></g>
-        <path class="arrow" d="M203 167 L213 174 L200 175 Z"/>
-        <g class="node"><circle cx="120" cy="150" r="3.5"/><circle cx="250" cy="110" r="3.5"/></g>
-        <g class="ground"><path d="M240 265 H260 M243 271 H257 M246 277 H254"/></g>
-        <g class="labels"><text x="250" y="26" text-anchor="middle">VCC</text><text x="102" y="99" text-anchor="end">RB</text><text x="268" y="84">RC</text><text x="268" y="229">RE</text><text x="196" y="196" text-anchor="middle">Q1</text><text x="250" y="296" text-anchor="middle">GND</text></g>
-      </svg>
-      {% else %}
-      <svg class="schematic" viewBox="0 0 380 320" role="img" aria-labelledby="schematic-title">
-        <title id="schematic-title">วงจร BJT NPN common-emitter แบบ voltage-divider bias:
-          R1 จาก VCC ไปเบส, R2 จากเบสลงกราวด์, RC จาก VCC ไปคอลเลกเตอร์,
-          RE จากอิมิตเตอร์ลงกราวด์</title>
-        <g class="wire"><path d="M70 40 H300"/><path d="M120 40 V75 M120 115 V150 M120 150 V175 M120 215 V265"/><path d="M250 40 V60 M250 100 V110 M250 190 V205 M250 245 V265"/><path d="M120 150 H180"/><path d="M180 140 L216 124 L250 110"/><path d="M180 160 L216 176 L250 190"/></g>
-        <g class="component"><rect x="112" y="75" width="16" height="40"/><rect x="112" y="175" width="16" height="40"/><rect x="242" y="60" width="16" height="40"/><rect x="242" y="205" width="16" height="40"/><circle cx="196" cy="150" r="26"/><path d="M182 132 V168"/></g>
-        <path class="arrow" d="M203 167 L213 174 L200 175 Z"/>
-        <g class="node"><circle cx="120" cy="150" r="3.5"/><circle cx="250" cy="110" r="3.5"/></g>
-        <g class="ground"><path d="M110 265 H130 M113 271 H127 M116 277 H124"/><path d="M240 265 H260 M243 271 H257 M246 277 H254"/></g>
-        <g class="labels"><text x="250" y="26" text-anchor="middle">VCC</text><text x="102" y="99" text-anchor="end">R1</text><text x="102" y="199" text-anchor="end">R2</text><text x="268" y="84">RC</text><text x="268" y="229">RE</text><text x="196" y="196" text-anchor="middle">Q1</text><text x="120" y="296" text-anchor="middle">GND</text><text x="250" y="296" text-anchor="middle">GND</text></g>
-      </svg>
-      {% endif %}
-      <p class="hint">แผนผังแสดงโครงสร้างวงจรเท่านั้น ไม่ได้วาดตามสัดส่วนจริง</p>
-    </section>
-  </div>
+        {% if result %}
+        {% set region_thai = {
+          "active": "ไบแอสอยู่ในช่วง Forward-Active — แบบจำลอง β คงที่ใช้ได้",
+          "saturation": "VCE ≤ 0.2 V — อยู่นอก active region ค่าที่แสดงมาจากสมการเชิงเส้น",
+          "cutoff": "IB ≤ 0 — ไม่มีกระแสไหลในวงจร",
+          "model-limit": "อยู่นอกช่วง Forward Active โดยประมาณ — ค่าที่แสดงมาจากสมการเชิงเส้น"
+        } %}
+        <div class="result-block" id="results">
+          <div class="result-block-head">
+            <div>
+              <div class="result-label">DC Bias Results</div>
+              <div class="result-sub">Analytical · {{ mode_label }}</div>
+            </div>
+            <span class="badge region-{{ result.region }}">{{ result.region|capitalize }}</span>
+          </div>
+          <dl class="readings readings-compact">
+            <div><dt>VB</dt><dd>{{ result.vb|voltage }}</dd></div>
+            <div><dt>VE</dt><dd>{{ result.ve|voltage }}</dd></div>
+            <div><dt>VC</dt><dd>{{ result.vc|voltage }}</dd></div>
+            <div><dt>VCE</dt><dd>{{ result.vce|voltage }}</dd></div>
+            <div><dt>IC</dt><dd>{{ result.ic|current }}</dd></div>
+            <div><dt>IE</dt><dd>{{ result.ie|current }}</dd></div>
+            <div><dt>IB</dt><dd>{{ result.ib|current }}</dd></div>
+          </dl>
+          <h3 class="region-heading">Operating Region</h3>
+          <p class="region-note">{{ region_thai.get(result.region, "") }}</p>
+          {% if result.warning %}<p class="warning">{{ result.warning }}</p>{% endif %}
+          {% if mode == 'divider' %}
+          <p class="check">ตรวจทานอิสระ: {{ "ผ่าน" if result.check_passed else "ไม่ผ่าน" }} (ผลต่างสูงสุด {{ "%.2e"|format(result.check_max_rel_diff) }})</p>
+          {% endif %}
+        </div>
+        {% else %}
+        <div class="result-block placeholder-block"><div class="result-label">DC Bias Results</div><p class="hint">กด "คำนวณ DC Bias" เพื่อดูผล Analytical</p></div>
+        {% endif %}
 
-  {% if result %}
-  {% set region_thai = {
-    "active": "ไบแอสอยู่ในช่วง Forward-Active — แบบจำลอง β คงที่ใช้ได้",
-    "saturation": "VCE ≤ 0.2 V — อยู่นอก active region ค่าที่แสดงมาจากสมการเชิงเส้น",
-    "cutoff": "IB ≤ 0 — ไม่มีกระแสไหลในวงจร",
-    "model-limit": "อยู่นอกช่วง Forward Active โดยประมาณ — ค่าที่แสดงมาจากสมการเชิงเส้น"
-  } %}
-  <section class="card results" id="results">
-    <div class="results-head">
-      <h2>DC Bias Results</h2>
-      <div class="result-badges">
-        <span class="badge">Analytical</span>
-        <span class="badge">{{ mode_label }}</span>
-        <span class="badge region-{{ result.region }}">{{ result.region|capitalize }}</span>
-      </div>
+        <div class="result-block">
+          <div class="result-label">SPICE Status</div>
+          <p class="region-note"><strong>Engine:</strong> {{ 'ngspice' if spice_available else 'ngspice (not found)' }}</p>
+          <p class="region-note"><strong>Version:</strong> {{ spice_version }}</p>
+          <p class="region-note"><strong>Model:</strong> {{ default_bjt_model }}</p>
+          <p class="region-note"><strong>Last run:</strong> {{ spice_analysis_labels[spice_analysis] }} — {{ 'Success' if spice_result else 'Error' if spice_error else 'No run' }}</p>
+        </div>
+      </section>
     </div>
-    <dl class="readings">
-      <div><dt>VB</dt><dd>{{ result.vb|voltage }}</dd></div>
-      <div><dt>VE</dt><dd>{{ result.ve|voltage }}</dd></div>
-      <div><dt>VC</dt><dd>{{ result.vc|voltage }}</dd></div>
-      <div><dt>VCE</dt><dd>{{ result.vce|voltage }}</dd></div>
-      <div><dt>IC</dt><dd>{{ result.ic|current }}</dd></div>
-      <div><dt>IE</dt><dd>{{ result.ie|current }}</dd></div>
-      <div><dt>IB</dt><dd>{{ result.ib|current }}</dd></div>
-    </dl>
-    <h3 class="region-heading">Operating Region</h3>
-    <p class="region-note">{{ region_thai.get(result.region, "") }}</p>
-    {% if result.warning %}<p class="warning">{{ result.warning }}</p>{% endif %}
-    {% if mode == 'divider' %}
-    <p class="check">ตรวจทานอิสระ: {{ "ผ่าน" if result.check_passed else "ไม่ผ่าน" }}
-      (ผลต่างสูงสุด {{ "%.2e"|format(result.check_max_rel_diff) }})</p>
-    {% endif %}
-  </section>
-  {% endif %}
-
-  <section class="card results" id="spice-results">
-    <div class="results-head">
-      <h2>SPICE Simulation (CE Reference)</h2>
-      <div class="result-badges">
-        <span class="badge">ngspice</span>
-        <span class="badge">{{ spice_analysis_labels[spice_analysis] }}</span>
-        <span class="badge {{ 'region-active' if spice_result else 'region-model-limit' }}">{{ 'Success' if spice_result else 'No run' if not spice_error else 'Error' }}</span>
-      </div>
-    </div>
-    <p class="hint">แหล่งที่มา: ngspice ภายนอกผ่าน subprocess (ไม่ใช่ค่าคำนวณใน JS). Model: {{ default_bjt_model }}. เวอร์ชัน: {{ spice_version }}.</p>
-
-    {% if spice_error %}
-    <p class="warning">SPICE Error: {{ spice_error }}</p>
-    {% endif %}
-
-    {% if spice_result %}
-      {% if spice_result.analysis == 'op' and spice_result.op %}
-      <dl class="readings">
-        <div><dt>VB (SPICE)</dt><dd>{{ spice_result.op.vb|voltage }}</dd></div>
-        <div><dt>VE (SPICE)</dt><dd>{{ spice_result.op.ve|voltage }}</dd></div>
-        <div><dt>VC (SPICE)</dt><dd>{{ spice_result.op.vc|voltage }}</dd></div>
-        <div><dt>VCE (SPICE)</dt><dd>{{ spice_result.op.vce|voltage }}</dd></div>
-        <div><dt>IC (SPICE)</dt><dd>{{ spice_result.op.ic|current }}</dd></div>
-      </dl>
-      {% elif spice_result.analysis == 'ac' and spice_result.ac %}
-      <div class="plot-wrap"><canvas id="ac-mag" class="plot-canvas" width="900" height="280" aria-label="Bode magnitude plot"></canvas></div>
-      <div class="plot-wrap"><canvas id="ac-phase" class="plot-canvas" width="900" height="240" aria-label="Bode phase plot"></canvas></div>
-      <script id="ac-data" type="application/json">{{ spice_result.ac | tojson }}</script>
-      {% elif spice_result.analysis == 'tran' and spice_result.tran %}
-      <div class="plot-wrap"><canvas id="tran-plot" class="plot-canvas" width="900" height="320" aria-label="Transient plot"></canvas></div>
-      <script id="tran-data" type="application/json">{{ spice_result.tran | tojson }}</script>
-      {% endif %}
-      <details><summary>Netlist / log tail</summary>
-        <pre class="log-block">{{ spice_result.netlist }}</pre>
-        <pre class="log-block">{{ spice_result.log_tail }}</pre>
-      </details>
-    {% elif not spice_error %}
-      <p class="region-note">ยังไม่ได้รัน SPICE ในรอบนี้ กด "Run ngspice" เพื่อจำลองจริง</p>
-    {% endif %}
-  </section>
+  </form>
 </main>
 
 <script>
@@ -237,8 +210,7 @@ function drawLinePlot(canvas, series, opts) {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   const pad = {l: 60, r: 20, t: 20, b: 45};
-  ctx.clearRect(0,0,W,H);
-  ctx.fillStyle = '#fff'; ctx.fillRect(0,0,W,H);
+  ctx.clearRect(0,0,W,H); ctx.fillStyle = '#fff'; ctx.fillRect(0,0,W,H);
   const xs = series.flatMap(s => s.x), ys = series.flatMap(s => s.y);
   let xmin = opts.xmin ?? Math.min(...xs), xmax = opts.xmax ?? Math.max(...xs);
   let ymin = opts.ymin ?? Math.min(...ys), ymax = opts.ymax ?? Math.max(...ys);
@@ -246,18 +218,13 @@ function drawLinePlot(canvas, series, opts) {
   if (ymin === ymax) { ymin -= 1; ymax += 1; }
   const xTo = x => pad.l + (x-xmin)/(xmax-xmin)*(W-pad.l-pad.r);
   const yTo = y => H-pad.b - (y-ymin)/(ymax-ymin)*(H-pad.t-pad.b);
-  ctx.strokeStyle = '#d3e0ec'; ctx.lineWidth = 1;
+  ctx.strokeStyle = '#dce7ee'; ctx.lineWidth = 1;
   for (let i=0;i<=5;i++){ const y=pad.t+i*(H-pad.t-pad.b)/5; ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke(); }
-  ctx.strokeStyle = '#546d83'; ctx.strokeRect(pad.l,pad.t,W-pad.l-pad.r,H-pad.t-pad.b);
+  ctx.strokeStyle = '#9cb2c2'; ctx.strokeRect(pad.l,pad.t,W-pad.l-pad.r,H-pad.t-pad.b);
   ctx.fillStyle = '#17344b'; ctx.font = '12px Tahoma, sans-serif';
-  ctx.fillText(opts.ylabel||'', 8, 16);
-  ctx.fillText(opts.xlabel||'', W/2-30, H-8);
+  ctx.fillText(opts.ylabel||'', 8, 16); ctx.fillText(opts.xlabel||'', W/2-30, H-8);
   for (let i=0;i<=5;i++){ const yv=ymin+i*(ymax-ymin)/5; ctx.fillText(yv.toPrecision(4), 4, yTo(yv)+4); }
-  series.forEach(s => {
-    ctx.strokeStyle = s.color; ctx.lineWidth = 2; ctx.beginPath();
-    s.x.forEach((x,i)=>{ const px=xTo(x), py=yTo(s.y[i]); i?ctx.lineTo(px,py):ctx.moveTo(px,py); });
-    ctx.stroke();
-  });
+  series.forEach(s => { ctx.strokeStyle = s.color; ctx.lineWidth = 2; ctx.beginPath(); s.x.forEach((x,i)=>{ const px=xTo(x), py=yTo(s.y[i]); i?ctx.lineTo(px,py):ctx.moveTo(px,py); }); ctx.stroke(); });
   let lx = pad.l + 10, ly = pad.t + 14;
   series.forEach(s => { ctx.fillStyle=s.color; ctx.fillRect(lx,ly-10,12,3); ctx.fillStyle='#17344b'; ctx.fillText(s.label,lx+16,ly-4); lx += 120; });
 }
@@ -267,16 +234,15 @@ function drawLogXPlot(canvas, series, opts) {
   const W = canvas.width, H = canvas.height;
   const pad = {l: 60, r: 20, t: 20, b: 45};
   ctx.clearRect(0,0,W,H); ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
-  const xs = series.flatMap(s => s.x.filter(v=>v>0));
-  const ys = series.flatMap(s => s.y);
+  const xs = series.flatMap(s => s.x.filter(v=>v>0)); const ys = series.flatMap(s => s.y);
   let xmin=Math.log10(Math.min(...xs)), xmax=Math.log10(Math.max(...xs));
   let ymin=opts.ymin ?? Math.min(...ys), ymax=opts.ymax ?? Math.max(...ys);
   if (xmin===xmax) xmax=xmin+1; if (ymin===ymax){ymin-=1;ymax+=1;}
   const xTo=x=>pad.l+(Math.log10(x)-xmin)/(xmax-xmin)*(W-pad.l-pad.r);
   const yTo=y=>H-pad.b-(y-ymin)/(ymax-ymin)*(H-pad.t-pad.b);
-  ctx.strokeStyle='#d3e0ec'; ctx.lineWidth=1;
+  ctx.strokeStyle='#dce7ee'; ctx.lineWidth=1;
   for(let i=0;i<=5;i++){const y=pad.t+i*(H-pad.t-pad.b)/5; ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(W-pad.r,y); ctx.stroke();}
-  ctx.strokeStyle='#546d83'; ctx.strokeRect(pad.l,pad.t,W-pad.l-pad.r,H-pad.t-pad.b);
+  ctx.strokeStyle='#9cb2c2'; ctx.strokeRect(pad.l,pad.t,W-pad.l-pad.r,H-pad.t-pad.b);
   ctx.fillStyle='#17344b'; ctx.font='12px Tahoma, sans-serif';
   ctx.fillText(opts.ylabel||'',8,16); ctx.fillText(opts.xlabel||'',W/2-30,H-8);
   for(let i=0;i<=5;i++){const yv=ymin+i*(ymax-ymin)/5; ctx.fillText(yv.toPrecision(4),4,yTo(yv)+4);}
@@ -285,17 +251,15 @@ function drawLogXPlot(canvas, series, opts) {
 }
 (function(){
   const acEl=document.getElementById('ac-data');
-  if(acEl){
-    const d=JSON.parse(acEl.textContent);
-    drawLogXPlot(document.getElementById('ac-mag'), [{x:d.frequency_hz,y:d.gain_db,color:'#1d638b',label:'|Vout/Vin| (dB)'}], {xlabel:'Frequency (Hz, log)', ylabel:'Gain (dB)'});
-    drawLogXPlot(document.getElementById('ac-phase'), [{x:d.frequency_hz,y:d.phase_deg,color:'#0c8078',label:'Phase (deg)'}], {xlabel:'Frequency (Hz, log)', ylabel:'Phase (deg)'});
+  if(acEl){ const d=JSON.parse(acEl.textContent);
+    drawLogXPlot(document.getElementById('ac-mag'), [{x:d.frequency_hz,y:d.gain_db,color:'#167e93',label:'|Vout/Vin| (dB)'}], {xlabel:'Frequency (Hz, log)', ylabel:'Gain (dB)'});
+    drawLogXPlot(document.getElementById('ac-phase'), [{x:d.frequency_hz,y:d.phase_deg,color:'#0c8e83',label:'Phase (deg)'}], {xlabel:'Frequency (Hz, log)', ylabel:'Phase (deg)'});
   }
   const trEl=document.getElementById('tran-data');
-  if(trEl){
-    const d=JSON.parse(trEl.textContent);
+  if(trEl){ const d=JSON.parse(trEl.textContent);
     drawLinePlot(document.getElementById('tran-plot'), [
-      {x:d.time_s.map(v=>v*1000), y:d.vin_v.map(v=>v*1000), color:'#1d638b', label:'Vin (mV)'},
-      {x:d.time_s.map(v=>v*1000), y:d.vout_v, color:'#b42318', label:'Vout (V)'}
+      {x:d.time_s.map(v=>v*1000), y:d.vin_v.map(v=>v*1000), color:'#0c8e83', label:'Vin (mV)'},
+      {x:d.time_s.map(v=>v*1000), y:d.vout_v, color:'#c77a35', label:'Vout (V)'}
     ], {xlabel:'Time (ms)', ylabel:'Voltage'});
   }
 })();
