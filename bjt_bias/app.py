@@ -210,7 +210,7 @@ def create_app() -> Flask:
                     spice_analyses=SPICE_ANALYSES,
                     spice_analysis_labels=SPICE_ANALYSIS_LABELS,
                     spice_available=ngspice_available(),
-                    spice_version=ngspice_version() or "ไม่พบ",
+                    spice_version=(ngspice_version() or ("พร้อมใช้งาน" if ngspice_available() else "ไม่พบ")),
                     default_bjt_model=DEFAULT_BJT_MODEL_NAME,
                 )
 
@@ -254,7 +254,7 @@ def create_app() -> Flask:
                     spice_analyses=SPICE_ANALYSES,
                     spice_analysis_labels=SPICE_ANALYSIS_LABELS,
                     spice_available=ngspice_available(),
-                    spice_version=ngspice_version() or "ไม่พบ",
+                    spice_version=(ngspice_version() or ("พร้อมใช้งาน" if ngspice_available() else "ไม่พบ")),
                     default_bjt_model=DEFAULT_BJT_MODEL_NAME,
                 )
 
@@ -275,7 +275,7 @@ def create_app() -> Flask:
                 spice_analyses=SPICE_ANALYSES,
                 spice_analysis_labels=SPICE_ANALYSIS_LABELS,
                 spice_available=ngspice_available(),
-                spice_version=ngspice_version() or "ไม่พบ",
+                spice_version=(ngspice_version() or ("พร้อมใช้งาน" if ngspice_available() else "ไม่พบ")),
                 default_bjt_model=DEFAULT_BJT_MODEL_NAME,
             )
 
@@ -297,7 +297,7 @@ def create_app() -> Flask:
             spice_analyses=SPICE_ANALYSES,
             spice_analysis_labels=SPICE_ANALYSIS_LABELS,
             spice_available=ngspice_available(),
-            spice_version=ngspice_version() or "ไม่พบ",
+            spice_version=(ngspice_version() or ("พร้อมใช้งาน" if ngspice_available() else "ไม่พบ")),
             default_bjt_model=DEFAULT_BJT_MODEL_NAME,
         )
 
