@@ -10,14 +10,28 @@ VCE_SAT = 0.2
 MAX_INPUT = 1e12
 FIELDS = ("vcc", "r1", "r2", "rc", "re", "beta", "vbe")
 RESISTOR_FIELDS = ("r1", "r2", "rc", "re")
+ALL_RESISTOR_FIELDS = ("r1", "r2", "rb", "rc", "re")
 UNIT_OHM = "ohm"
 UNIT_KOHM = "kohm"
 UNIT_FACTORS = {UNIT_OHM: 1.0, UNIT_KOHM: 1e3}
+
+MODE_DIVIDER = "divider"
+MODE_FIXED = "fixed"
+MODE_EMITTER = "emitter"
+MODES = (MODE_DIVIDER, MODE_FIXED, MODE_EMITTER)
+MODE_LABELS = {
+    MODE_DIVIDER: "Voltage Divider Bias",
+    MODE_FIXED: "Fixed Bias",
+    MODE_EMITTER: "Emitter Bias",
+}
+MODE_FIXED_FIELDS = ("vcc", "rb", "rc", "beta", "vbe")
+MODE_EMITTER_FIELDS = ("vcc", "rb", "rc", "re", "beta", "vbe")
 
 _NUMBER_ERROR = "ต้องเป็นตัวเลข"
 _POSITIVE_ERROR = "ต้องมากกว่าศูนย์"
 _TOO_LARGE_ERROR = "ค่ามากเกินไป"
 _UNIT_ERROR = "หน่วยไม่ถูกต้อง"
+_MODE_ERROR = "โหมดไม่ถูกต้อง"
 
 
 @dataclass(frozen=True)
@@ -31,18 +45,37 @@ class BiasInputs:
     vbe: float
 
 
-def parse_inputs(raw: dict[str, str]) -> tuple[BiasInputs | None, dict[str, str]]:
-    """Turn raw form strings into validated inputs, or per-field Thai errors."""
+@dataclass(frozen=True)
+class FixedInputs:
+    vcc: float
+    rb: float
+    rc: float
+    beta: float
+    vbe: float
+
+
+@dataclass(frozen=True)
+class EmitterInputs:
+    vcc: float
+    rb: float
+    rc: float
+    re: float
+    beta: float
+    vbe: float
+
+
+def _parse_fields(raw: dict[str, str], fields: tuple[str, ...]) -> tuple[dict[str, float], dict[str, str]]:
+    """Parse and validate selected fields, converting resistor units to ohms once."""
     values: dict[str, float] = {}
     errors: dict[str, str] = {}
 
-    for field in FIELDS:
+    for field in fields:
         text = (raw.get(field) or "").strip()
         if not text:
             errors[field] = _NUMBER_ERROR
             continue
         factor = 1.0
-        if field in RESISTOR_FIELDS:
+        if field in ALL_RESISTOR_FIELDS:
             unit = (raw.get(f"{field}_unit") or UNIT_OHM).strip()
             if unit not in UNIT_FACTORS:
                 errors[field] = _UNIT_ERROR
@@ -63,7 +96,7 @@ def parse_inputs(raw: dict[str, str]) -> tuple[BiasInputs | None, dict[str, str]
 
     if "vcc" in values and values["vcc"] <= 0:
         errors["vcc"] = _POSITIVE_ERROR
-    for field in RESISTOR_FIELDS:
+    for field in ALL_RESISTOR_FIELDS:
         if field in values and values[field] <= 0:
             errors[field] = _POSITIVE_ERROR
     if "beta" in values and values["beta"] <= 0:
@@ -74,9 +107,34 @@ def parse_inputs(raw: dict[str, str]) -> tuple[BiasInputs | None, dict[str, str]
         elif "vcc" in values and values["vbe"] >= values["vcc"]:
             errors["vbe"] = "ต้องน้อยกว่า VCC"
 
+    return values, errors
+
+
+def parse_inputs(raw: dict[str, str]) -> tuple[BiasInputs | None, dict[str, str]]:
+    """Turn raw form strings into validated inputs, or per-field Thai errors."""
+    values, errors = _parse_fields(raw, FIELDS)
     if errors:
         return None, errors
     return BiasInputs(**values), {}
+
+
+def parse_mode_inputs(
+    raw: dict[str, str], mode: str
+) -> tuple[BiasInputs | FixedInputs | EmitterInputs | None, dict[str, str]]:
+    """Parse inputs for the selected bias mode; unknown modes return a mode error."""
+    if mode == MODE_DIVIDER:
+        return parse_inputs(raw)
+    if mode == MODE_FIXED:
+        values, errors = _parse_fields(raw, MODE_FIXED_FIELDS)
+        if errors:
+            return None, errors
+        return FixedInputs(**values), {}
+    if mode == MODE_EMITTER:
+        values, errors = _parse_fields(raw, MODE_EMITTER_FIELDS)
+        if errors:
+            return None, errors
+        return EmitterInputs(**values), {}
+    return None, {"mode": _MODE_ERROR}
 
 
 def solve_thevenin(i: BiasInputs) -> dict[str, float]:
@@ -144,9 +202,9 @@ def cross_check(
 
 @dataclass(frozen=True)
 class BiasResult:
-    inputs: BiasInputs
-    vbb: float
-    rb: float
+    inputs: BiasInputs | FixedInputs | EmitterInputs
+    vbb: float | None
+    rb: float | None
     ib: float
     ic: float
     ie: float
@@ -158,6 +216,7 @@ class BiasResult:
     warning: str | None
     check_passed: bool
     check_max_rel_diff: float
+    mode: str = MODE_DIVIDER
 
 
 def analyze(i: BiasInputs) -> BiasResult:
@@ -176,6 +235,7 @@ def analyze(i: BiasInputs) -> BiasResult:
         rb=thevenin["rb"],
         check_passed=passed,
         check_max_rel_diff=diff,
+        mode=MODE_DIVIDER,
     )
 
     if thevenin["ib"] <= 0:
@@ -211,3 +271,79 @@ def analyze(i: BiasInputs) -> BiasResult:
         region=region,
         warning=warning,
     )
+
+
+def _model_limit_warning() -> str:
+    return (
+        "Model limit — อยู่นอกช่วง Forward Active โดยประมาณ "
+        "(IB ≤ 0 หรือ VCE ≤ 0.2 V); ค่าที่แสดงมาจากสมการเชิงเส้น ไม่ใช่ค่าตัด/อิ่มตัวจริง"
+    )
+
+
+def _build_simple_result(
+    i: FixedInputs | EmitterInputs, mode: str, ib: float, ic: float, ie: float, ve: float, vc: float
+) -> BiasResult:
+    vb = ve + i.vbe
+    vce = vc - ve
+    if ib <= 0 or vce <= VCE_SAT:
+        region = "model-limit"
+        warning = _model_limit_warning()
+    else:
+        region = "active"
+        warning = None
+    return BiasResult(
+        inputs=i,
+        vbb=None,
+        rb=None,
+        ib=ib,
+        ic=ic,
+        ie=ie,
+        vb=vb,
+        ve=ve,
+        vc=vc,
+        vce=vce,
+        region=region,
+        warning=warning,
+        check_passed=True,
+        check_max_rel_diff=0.0,
+        mode=mode,
+    )
+
+
+def analyze_fixed(i: FixedInputs) -> BiasResult:
+    """Solve fixed bias; report model-limit warning outside Forward Active."""
+    ib = (i.vcc - i.vbe) / i.rb
+    ic = i.beta * ib
+    ie = (i.beta + 1) * ib
+    ve = 0.0
+    vc = i.vcc - ic * i.rc
+    return _build_simple_result(i, MODE_FIXED, ib, ic, ie, ve, vc)
+
+
+def analyze_emitter(i: EmitterInputs) -> BiasResult:
+    """Solve single-supply emitter bias; report model-limit warning outside Forward Active."""
+    ib = (i.vcc - i.vbe) / (i.rb + (i.beta + 1) * i.re)
+    ic = i.beta * ib
+    ie = (i.beta + 1) * ib
+    ve = ie * i.re
+    vc = i.vcc - ic * i.rc
+    return _build_simple_result(i, MODE_EMITTER, ib, ic, ie, ve, vc)
+
+
+def analyze_mode(
+    mode: str, raw: dict[str, str]
+) -> tuple[BiasResult | None, dict[str, str]]:
+    """Parse and analyze the selected mode. Divider preserves existing behavior."""
+    inputs, errors = parse_mode_inputs(raw, mode)
+    if errors or inputs is None:
+        return None, errors
+    if mode == MODE_DIVIDER:
+        assert isinstance(inputs, BiasInputs)
+        return analyze(inputs), {}
+    if mode == MODE_FIXED:
+        assert isinstance(inputs, FixedInputs)
+        return analyze_fixed(inputs), {}
+    if mode == MODE_EMITTER:
+        assert isinstance(inputs, EmitterInputs)
+        return analyze_emitter(inputs), {}
+    return None, {"mode": _MODE_ERROR}

@@ -305,3 +305,52 @@ button:hover { background: var(--blue); }
   body { padding: 1.25rem 0.75rem 2rem; }
   .card { padding: 1rem; }
 }
+
+.mode-bar {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px dashed var(--line);
+}
+
+.mode-field label { margin-bottom: 0.35rem; }
+
+.mode-control {
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.mode-control select {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+
+.secondary-btn {
+  margin-top: 0;
+  width: auto;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #eef4fa;
+  color: var(--navy);
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.secondary-btn:hover { background: #ddeaf5; }
+
+.result-badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.region-model-limit { color: #7a2e00; background: #fff1e8; }
