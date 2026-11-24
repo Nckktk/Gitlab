@@ -1,57 +1,108 @@
-# ENG29 2121 — BJT DC Bias / Amplifier Simulator (Lab 3 → Lab 4)
+# ENG29 2121 — BJT DC Bias / CE Amplifier Simulator (Lab 3 → Lab 4)
 
-โปรเจกต์นี้ต่อยอดจาก Lab 3 Flask web app สำหรับคำนวณ DC bias ของ BJT CE และเพิ่มเส้นทางจำลอง **ngspice จริง** สำหรับวงจร CE Voltage Divider อ้างอิง (DC `.op`, AC `.ac`, Transient `.tran`) ตาม Lab 04 handout.
+Flask web app สำหรับคำนวณ **DC Bias แบบ Analytical 3 โหมด** (Lab 3 baseline) และจำลองวงจร **CE Voltage Divider Reference** ด้วย **ngspice จริง** (`.op`, `.ac`, `.tran`) สำหรับ Lab 04.
 
-## สถานะปัจจุบัน
+> **สำคัญ:** ผล SPICE ที่แสดงใน UI ต้องมาจาก ngspice ที่รันจริงเท่านั้น ระบบจะแสดง error/สถานะเมื่อ engine ไม่พร้อม และไม่แสดงกราฟปลอม
 
-- **Lab 3 baseline:** มี 3 โหมด Analytical DC Bias (`Voltage Divider`, `Fixed Bias`, `Emitter Bias`) ใน `bjt_bias/engineering.py` และหน้าเว็บ Flask เดิม/ขยาย.
-- **Lab 4 SPICE path:** มี `bjt_bias/spice_engine.py` สำหรับสร้าง netlist, เรียก `ngspice` แบบ external process (`subprocess.run`, ไม่ใช้ `shell=True`, มี timeout), และ parse ผลลัพธ์. UI แสดงสถานะ engine/provenance และแยกผล Analytical กับ SPICE.
-- **ข้อจำกัดสภาพแวดล้อมนี้:** เครื่องที่ใช้พัฒนาตอนนี้ **ไม่พบ `ngspice` ใน PATH** จึงยังไม่ได้รัน B2–B6 แบบ engine จริง; การทดสอบที่รันได้เป็น pytest + Flask test client + mocked subprocess. ดู `docs/validation.md`.
+## สิ่งที่มีในโปรเจกต์
+
+- **Lab 3 Analytical DC Bias (3 modes):** `Voltage Divider Bias`, `Fixed Bias`, `Emitter Bias` ใน `bjt_bias/engineering.py`
+- **Lab 4 ngspice path:** สร้าง netlist, เรียก `ngspice` ด้วย `subprocess.run(..., shell=False, timeout=...)`, parse output จริง, แยกแสดงผล Analytical/SPICE ใน `bjt_bias/spice_engine.py` + `bjt_bias/app.py`
+- **UI:** ฟอร์มพารามิเตอร์, เลือกโหมด bias, ปุ่มคำนวณ DC, ปุ่ม/แท็บรัน SPICE, กราฟ AC/Transient จากข้อมูลจริง, แสดง netlist/log tail และ provenance
 
 ## โครงสร้างหลัก
 
 ```text
 bjt_bias/
-  app.py              # Flask routes, form handling, SPICE dispatch
-  engineering.py      # Analytical DC bias (3 modes), pure Python
-  spice_engine.py     # ngspice netlist/run/parse adapter
-  templates/index.html
-  static/style.css
-  tests/
+  app.py                 # Flask routes, form handling, SPICE dispatch
+  engineering.py         # Analytical DC bias (3 modes), pure Python
+  spice_engine.py        # ngspice netlist/run/parse adapter
+  templates/index.html   # UI template
+  static/style.css       # UI styling
+  tests/                 # pytest + Flask test client tests
 docs/
-  validation.md
-  superpowers/...
+  validation.md          # B1–B8 validation record
+README.md
 ```
 
-## ติดตั้ง
+## ความต้องการระบบ
+
+- Python 3.x (ทดสอบกับ venv ในโปรเจกต์)
+- Python dependencies: ดู `bjt_bias/requirements.txt`
+- **ngspice** (ติดตั้งแยกจาก Python, ไม่ใช่ pip package) สำหรับรัน `.op/.ac/.tran`
+
+## ติดตั้ง Python Dependencies
 
 ```powershell
+cd C:\Users\b6648794\Desktop\Gitlab
 python -m venv .venv
 .venv\Scripts\python -m pip install -r bjt_bias\requirements.txt
 ```
 
-ติดตั้ง ngspice แยกจาก Python (ไม่ใช่ pip package) และตรวจให้เรียกได้จาก terminal:
+## ติดตั้ง ngspice (Windows)
+
+1. ดาวน์โหลด ngspice สำหรับ Windows จาก https://ngspice.sourceforge.io/download.html
+2. แตกไฟล์/ติดตั้ง แล้วหาโฟลเดอร์ที่มี `ngspice.exe` (เช่น `...\Spice64\bin`)
+3. ทำให้ `ngspice` เรียกได้จาก terminal:
+   - **ชั่วคราว (PowerShell session เดียว):**
+     ```powershell
+     $env:Path += ";C:\Users\b6648794\Downloads\ngspice-47_64\Spice64\bin"
+     ```
+   - **ชั่วคราว (cmd session เดียว):**
+     ```cmd
+     set "PATH=%PATH%;C:\Users\b6648794\Downloads\ngspice-47_64\Spice64\bin"
+     ```
+   - **ถาวรระดับ User:** เพิ่มโฟลเดอร์ `bin` ใน *Edit environment variables for your account* → `Path`
+4. ตรวจสอบ:
 
 ```powershell
-ngspice --version
+where.exe ngspice
+.venv\Scripts\python -c "import shutil; print(shutil.which('ngspice'))"
 ```
 
-## รัน
+## วิธีรัน Server
+
+รันใน terminal ที่มี ngspice ใน PATH (ถ้าต้องการใช้ SPICE):
 
 ```powershell
+cd C:\Users\b6648794\Desktop\Gitlab
+$env:Path += ";C:\Users\b6648794\Downloads\ngspice-47_64\Spice64\bin"   # ปรับ path ตามเครื่อง
 .venv\Scripts\python -m bjt_bias.app
 ```
 
-เปิด URL ที่ Flask แจ้ง เช่น `http://127.0.0.1:5000/`
+เมื่อเห็นข้อความ `Running on http://127.0.0.1:5000` ให้เปิด browser ไปที่ URL นั้น
 
-## ทดสอบ
+## วิธีใช้งานใน Browser
+
+1. เปิด `http://127.0.0.1:5000/`
+2. เลือก **Bias Mode** (Voltage Divider / Fixed / Emitter) แล้วใส่พารามิเตอร์
+3. กด **คำนวณ DC Bias** เพื่อดูผล Analytical
+4. สำหรับ Lab 4 CE Reference: เลือก `Voltage Divider Bias` แล้วกดแท็บ/ปุ่ม **DC (.op)**, **AC (.ac)**, หรือ **Transient (.tran)** เพื่อรัน ngspice จริง
+5. ตรวจผลใน panel Simulation & Plots, Engineering Results, และ `Netlist / log tail`
+
+## ทดสอบอัตโนมัติ
 
 ```powershell
+cd C:\Users\b6648794\Desktop\Gitlab
 .venv\Scripts\python -m pytest bjt_bias\tests -q
 ```
 
-## หมายเหตุสำคัญ
+การทดสอบที่รันได้ในสภาพแวดล้อมที่ไม่มี ngspice จะใช้ mocked subprocess/Flask test client; ดูรายละเอียดใน `docs/validation.md`.
 
-- ผล SPICE ที่แสดงใน UI ต้องมาจาก ngspice run จริง; ถ้า engine ไม่พร้อมระบบจะแสดง error/สถานะ ไม่แสดงกราฟปลอม.
-- BJT model เริ่มต้นใน `spice_engine.py` เป็น generic 2N3904 approximation สำหรับการพัฒนา; ก่อนส่งงานจริงควรแทนด้วย model ที่ instructor starter กำหนดและบันทึก provenance.
-- อย่า commit `.venv/`, `.env`, API keys, หรือไฟล์ run ชั่วคราวขนาดใหญ่.
+## Validation / Submission Evidence
+
+- บันทึกการตรวจ B1–B8: `docs/validation.md`
+- ก่อนส่งงาน ควรแนบ: screenshot กราฟจริงจาก browser, log tail/netlist ที่เกี่ยวข้อง, before/after UI (ถ้ามี), และบันทึก 3–5 บรรทัดว่า AI ทำอะไร/นักศึกษาตรวจอะไรเอง
+
+## ข้อจำกัดและหมายเหตุ
+
+- **BJT model:** ค่าเริ่มต้นใน `spice_engine.py` เป็น `Q2N3904_GENERIC` (generic approximation) — ก่อนตรวจ/ส่งงานจริงควรแทนด้วย model ที่ instructor starter กำหนด และบันทึก provenance ใน `docs/validation.md`
+- **ngspice ไม่พร้อม:** UI จะแสดง SPICE error และไม่แสดงกราฟปลอม
+- **AC convention:** netlist ตั้ง AC source magnitude = 1V เพื่อให้อ่าน magnitude ได้สะดวก; ควรตรวจจุดวัด/ convention กับ reference circuit ก่อนสรุปผล gain ทางกายภาพ
+- **อย่า commit:** `.venv/`, `.env`, API keys/tokens, ไฟล์ run ชั่วคราวขนาดใหญ่
+
+## Submission Info (เติมก่อนส่ง)
+
+- GitHub Repository URL: `https://github.com/Nckktk/Gitlab.git`
+- Commit SHA: `[ใส่ commit SHA ที่ส่งจริง]`
+- ผู้จัดทำ/ตรวจสอบ: `[ชื่อ-รหัสนักศึกษา]`
